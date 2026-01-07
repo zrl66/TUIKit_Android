@@ -556,45 +556,13 @@ class AnchorView @JvmOverloads constructor(
 
     private fun enterRoom() {
         anchorState?.let {
-            if (it.liveInfo.keepOwnerOnSeat) {
-                PermissionRequest.requestCameraPermissions(
-                    ContextProvider.getApplicationContext(), object : PermissionCallback() {
-                        override fun onGranted() {
-                            logger.info("requestCameraPermissions:[onGranted]")
-                            DeviceStore.shared().openLocalCamera(true, object : CompletionHandler {
-                                override fun onSuccess() {
-                                    logger.info("startCamera success, requestMicrophonePermissions")
-                                    PermissionRequest.requestMicrophonePermissions(
-                                        ContextProvider.getApplicationContext(), object : PermissionCallback() {
-                                            override fun onGranted() {
-                                                logger.info("requestMicrophonePermissions success")
-                                                DeviceStore.shared().openLocalMicrophone(null)
-                                            }
-
-                                            override fun onDenied() {
-                                                logger.error("requestMicrophonePermissions:[onDenied]")
-                                            }
-                                        })
-                                }
-
-                                override fun onFailure(code: Int, desc: String) {
-                                    logger.error("startCamera failed:code:$code,desc:$desc")
-                                }
-
-                            })
-                        }
-
-                        override fun onDenied() {
-                            logger.error("requestCameraPermissions:[onDenied]")
-                        }
-                    })
-            }
             // TODO @xander 这个 api 被废弃，看下是否迁移到非 废弃方法中
             liveCoreView.setLocalVideoMuteImage(mediaState?.bigMuteBitmap, mediaState?.smallMuteBitmap)
 
             val liveListStore = LiveListStore.shared()
             liveListStore.joinLive(it.roomId, object : LiveInfoCompletionHandler {
                 override fun onSuccess(liveInfo: LiveInfo) {
+                    startLocalPreview(liveInfo)
                     val activity = baseContext as Activity
                     if (activity.isFinishing || activity.isDestroyed) {
                         logger.warn("activity is exit")
@@ -661,6 +629,42 @@ class AnchorView @JvmOverloads constructor(
                 finishActivity()
             }
         })
+    }
+
+    private fun startLocalPreview(liveInfo: LiveInfo) {
+        if (liveInfo.keepOwnerOnSeat) {
+            PermissionRequest.requestCameraPermissions(
+                ContextProvider.getApplicationContext(), object : PermissionCallback() {
+                    override fun onGranted() {
+                        logger.info("requestCameraPermissions:[onGranted]")
+                        DeviceStore.shared().openLocalCamera(true, object : CompletionHandler {
+                            override fun onSuccess() {
+                                logger.info("startCamera success, requestMicrophonePermissions")
+                                PermissionRequest.requestMicrophonePermissions(
+                                    ContextProvider.getApplicationContext(), object : PermissionCallback() {
+                                        override fun onGranted() {
+                                            logger.info("requestMicrophonePermissions success")
+                                            DeviceStore.shared().openLocalMicrophone(null)
+                                        }
+
+                                        override fun onDenied() {
+                                            logger.error("requestMicrophonePermissions:[onDenied]")
+                                        }
+                                    })
+                            }
+
+                            override fun onFailure(code: Int, desc: String) {
+                                logger.error("startCamera failed:code:$code,desc:$desc")
+                            }
+
+                        })
+                    }
+
+                    override fun onDenied() {
+                        logger.error("requestCameraPermissions:[onDenied]")
+                    }
+                })
+        }
     }
 
     private fun initComponentView() {
