@@ -19,6 +19,7 @@ import com.tencent.qcloud.tuicore.util.TUIBuild
 import com.tencent.qcloud.tuikit.tuicallkit.R
 import com.tencent.qcloud.tuikit.tuicallkit.common.data.Constants
 import com.tencent.qcloud.tuikit.tuicallkit.common.data.Logger
+import com.tencent.qcloud.tuikit.tuicallkit.common.metrics.KeyMetrics
 import com.tencent.qcloud.tuikit.tuicallkit.common.utils.DeviceUtils
 import com.tencent.qcloud.tuikit.tuicallkit.common.utils.PermissionRequest
 import com.tencent.qcloud.tuikit.tuicallkit.manager.CallManager
@@ -76,6 +77,8 @@ class CallMainActivity : FullScreenActivity() {
             finishCallMainActivity()
             return
         }
+        val callId = CallStore.shared.observerState.activeCall.value.callId
+        KeyMetrics.countUV(KeyMetrics.EventId.WAKEUP, callId)
         setBackground()
         addCallView()
         addFloatButton()

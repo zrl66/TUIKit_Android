@@ -21,6 +21,7 @@ import com.tencent.qcloud.tuicore.util.TUIBuild
 import com.tencent.qcloud.tuikit.tuicallkit.R
 import com.tencent.qcloud.tuikit.tuicallkit.common.data.Constants
 import com.tencent.qcloud.tuikit.tuicallkit.common.data.Logger
+import com.tencent.qcloud.tuikit.tuicallkit.common.metrics.KeyMetrics
 import com.tencent.qcloud.tuikit.tuicallkit.manager.feature.NotificationFeature
 import com.tencent.qcloud.tuikit.tuicallkit.view.CallMainActivity
 import io.trtc.tuikit.atomicxcore.api.call.CallMediaType
@@ -58,6 +59,8 @@ class IncomingNotificationBanner(context: Context) {
 
     fun showNotification(participant: CallParticipantInfo) {
         Logger.i(TAG, "showNotification, user: $participant")
+        val callId = CallStore.shared.observerState.activeCall.value.callId
+        KeyMetrics.countUV(KeyMetrics.EventId.WAKEUP, callId)
         registerObserver()
         notification = createNotification()
 

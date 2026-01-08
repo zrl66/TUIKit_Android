@@ -11,6 +11,7 @@ import com.tencent.qcloud.tuicore.permission.PermissionCallback
 import com.tencent.qcloud.tuicore.permission.PermissionRequester
 import com.tencent.qcloud.tuikit.tuicallkit.common.data.Constants
 import com.tencent.qcloud.tuikit.tuicallkit.common.data.Logger
+import com.tencent.qcloud.tuikit.tuicallkit.common.metrics.KeyMetrics
 import com.tencent.qcloud.tuikit.tuicallkit.common.utils.DeviceUtils
 import com.tencent.qcloud.tuikit.tuicallkit.common.utils.PermissionRequest
 import com.tencent.qcloud.tuikit.tuicallkit.manager.CallManager
@@ -65,6 +66,10 @@ class TUICallKitImpl private constructor(context: Context) : TUICallKit() {
             if (toastText != null) {
                 ToastUtil.toastLongMessage(toastText)
             }
+        }
+
+        override fun onCallReceived(callId: String, mediaType: CallMediaType, userData: String) {
+            KeyMetrics.countUV(KeyMetrics.EventId.RECEIVED, callId)
         }
     }
 

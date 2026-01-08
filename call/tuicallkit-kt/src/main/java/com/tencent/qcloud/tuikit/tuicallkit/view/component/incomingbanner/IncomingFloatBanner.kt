@@ -18,6 +18,7 @@ import com.tencent.qcloud.tuicore.util.TUIBuild
 import com.tencent.qcloud.tuikit.tuicallkit.R
 import com.tencent.qcloud.tuikit.tuicallkit.common.data.Constants
 import com.tencent.qcloud.tuikit.tuicallkit.common.data.Logger
+import com.tencent.qcloud.tuikit.tuicallkit.common.metrics.KeyMetrics
 import com.tencent.qcloud.tuikit.tuicallkit.manager.CallManager
 import com.tencent.qcloud.tuikit.tuicallkit.state.ViewState
 import com.tencent.qcloud.tuikit.tuicallkit.view.CallMainActivity
@@ -143,6 +144,8 @@ class IncomingFloatBanner(context: Context) : RelativeLayout(context) {
 
         CallManager.instance.viewState.router.set(ViewState.ViewRouter.Banner)
         windowManager.addView(layoutView, viewParams)
+        val callId = CallStore.shared.observerState.activeCall.value.callId
+        KeyMetrics.countUV(KeyMetrics.EventId.WAKEUP, callId)
     }
 
     private val viewParams: WindowManager.LayoutParams
