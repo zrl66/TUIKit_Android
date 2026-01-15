@@ -52,14 +52,14 @@ class KaraokeSettingPanel @JvmOverloads constructor(
 
     private fun initEnableOriginView() {
         val switchOrigin = findViewById<SwitchCompat>(R.id.sc_enable_origin)
-        switchOrigin.isChecked =
-            store.currentTrack.value == TXChorusOriginalSong
-        switchOrigin.setOnCheckedChangeListener { _, enable ->
-            if (enable) {
+        switchOrigin.isChecked = store.currentTrack.value == TXChorusOriginalSong
+        switchOrigin.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
                 store.switchMusicTrack(TXChorusOriginalSong)
             } else {
                 store.switchMusicTrack(TXChorusAccompaniment)
             }
+            switchOrigin.isChecked = store.currentTrack.value == TXChorusOriginalSong
         }
     }
 

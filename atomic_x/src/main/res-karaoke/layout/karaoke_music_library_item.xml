@@ -60,34 +60,6 @@
                 android:maxLines="1"
                 android:textColor="@color/karaoke_color_grey_8c"
                 android:textSize="12sp" />
-
-            <TextView
-                android:id="@+id/tv_original"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/karaoke_bg_karaoke_tag_blue"
-                android:gravity="center"
-                android:minWidth="36dp"
-                android:paddingLeft="8dp"
-                android:paddingRight="8dp"
-                android:text="@string/karaoke_original"
-                android:textColor="@color/karaoke_color_blue"
-                android:textSize="10sp" />
-
-            <TextView
-                android:id="@+id/tv_score"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:background="@drawable/karaoke_bg_karaoke_tag_green"
-                android:gravity="center"
-                android:minWidth="36dp"
-                android:paddingLeft="8dp"
-                android:paddingRight="8dp"
-                android:text="@string/karaoke_score"
-                android:textColor="@color/karaoke_color_green"
-                android:textSize="10sp" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

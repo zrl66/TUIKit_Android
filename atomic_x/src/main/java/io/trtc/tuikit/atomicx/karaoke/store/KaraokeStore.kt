@@ -26,6 +26,8 @@ import com.tencent.trtc.TRTCCloudDef.TRTCParams
 import com.tencent.trtc.TRTCCloudListener
 import com.tencent.trtc.TXChorusMusicPlayer
 import com.tencent.trtc.TXChorusMusicPlayer.TXChorusRole
+import com.tencent.trtc.txcopyrightedmedia.TXCopyrightedMedia
+import com.trtc.tuikit.common.util.ToastUtil
 import io.trtc.tuikit.atomicx.R
 import io.trtc.tuikit.atomicx.karaoke.service.SongServiceFactory
 import io.trtc.tuikit.atomicx.karaoke.store.utils.LyricsFileReader
@@ -121,6 +123,7 @@ class KaraokeStore private constructor(private val context: Context) {
     private val _isRoomDismissed = MutableLiveData(false)
 
     fun init(roomId: String, isOwner: Boolean) {
+        Log.d(TAG, "init: roomId=$roomId, isOwner=$isOwner")
         if (chorusPlayer != null) return
         _isRoomOwner.value = isOwner
         ownerId = LiveListStore.shared().liveState.currentLive.value.liveOwner.userID
@@ -139,6 +142,7 @@ class KaraokeStore private constructor(private val context: Context) {
     }
 
     fun destroy() {
+        Log.d(TAG, "destroy: called")
         stopPlayback()
         _isRoomDismissed.value = true
         _songQueue.value = emptyList()
@@ -160,18 +164,21 @@ class KaraokeStore private constructor(private val context: Context) {
     }
 
     fun addObserver() {
+        Log.d(TAG, "addObserver")
         songListManager.addObserver(songListObserver)
         TUIRoomEngine.sharedInstance().addObserver(roomEngineObserver)
         TUIRoomEngine.sharedInstance().trtcCloud.setAudioFrameListener(audioFrameListener)
     }
 
     fun removeObserver() {
+        Log.d(TAG, "removeObserver")
         songListManager.removeObserver(songListObserver)
         TUIRoomEngine.sharedInstance().removeObserver(roomEngineObserver)
         TUIRoomEngine.sharedInstance().trtcCloud.setAudioFrameListener(null)
     }
 
     fun enableRequestMusic(enable: Boolean) {
+        Log.d(TAG, "enableRequestMusic: enable=$enable")
         if (_isDisplayFloatView.value != enable) {
             val metadata = hashMapOf(KEY_ENABLE_REQUEST_MUSIC to enable.toString())
             TUIRoomEngine.sharedInstance().setRoomMetadataByAdmin(metadata, null)
@@ -194,16 +201,19 @@ class KaraokeStore private constructor(private val context: Context) {
     }
 
     private fun loadMusicByLeadSinger() {
+        Log.d(TAG, "loadMusicByLeadSinger: isOwner=${isRoomOwner.value}, queueSize=${songQueue.value?.size}")
         if (isRoomOwner.value == false) return
         val songQueueValue = songQueue.value
         if (songQueueValue.isNullOrEmpty()) {
             _playbackState.value = PlaybackState.IDLE
             _loadingMusicId = null
+            _isCurrentSongRemoved = false
             return
         }
         val firstSong = songQueueValue.first()
         val songId = firstSong.songId
         if (!songId.isNullOrEmpty()) {
+            _isCurrentSongRemoved = false
             _loadingMusicId = songId
             Log.d(TAG, "loadMusicByLeadSinger: loading songId=$songId, songName=${firstSong.songName}")
             loadMusic(songId)
@@ -211,12 +221,14 @@ class KaraokeStore private constructor(private val context: Context) {
     }
 
     private fun loadMusic(musicId: String) {
+        Log.d(TAG, "loadMusic: musicId=$musicId")
         if (musicId.startsWith(LOCAL_MUSIC_PREFIX)) {
             loadLocalDemoMusic(musicId)
         } else loadCopyrightedMusic(musicId)
     }
 
     private fun loadLocalDemoMusic(musicId: String) {
+        Log.d(TAG, "loadLocalDemoMusic: musicId=$musicId")
         val musicInfo = findSongInCatalog(musicId) ?: return
         val params = TXChorusMusicPlayer.TXChorusExternalMusicParams().apply {
             this.musicId = musicInfo.musicId
@@ -229,6 +241,7 @@ class KaraokeStore private constructor(private val context: Context) {
     }
 
     private fun loadCopyrightedMusic(musicId: String) {
+        Log.d(TAG, "loadCopyrightedMusic: musicId=$musicId")
         musicCatalogService?.queryPlayToken(musicId, userId, object : QueryPlayTokenCallBack {
             override fun onSuccess(
                 musicId: String,
@@ -236,6 +249,7 @@ class KaraokeStore private constructor(private val context: Context) {
                 copyrightedLicenseKey: String?,
                 copyrightedLicenseUrl: String?,
             ) {
+                Log.d(TAG, "loadCopyrightedMusic: queryPlayToken success, musicId=$musicId")
                 val params = TXChorusMusicPlayer.TXChorusCopyrightedMusicParams().apply {
                     this.musicId = musicId
                     this.playToken = playToken
@@ -246,27 +260,33 @@ class KaraokeStore private constructor(private val context: Context) {
             }
 
             override fun onFailure(code: Int, desc: String) {
+                Log.e(TAG, "loadCopyrightedMusic: queryPlayToken failed, code=$code, desc=$desc")
                 onKaraokeError(code, desc)
             }
         })
     }
 
     fun loadMusicCatalog() {
+        Log.d(TAG, "loadMusicCatalog")
         musicCatalogService?.getSongList(object : GetSongListCallBack {
             override fun onSuccess(songList: List<MusicInfo>) {
+                Log.d(TAG, "loadMusicCatalog: success, count=${songList.size}")
                 _songCatalog.postValue(songList)
             }
 
             override fun onFailure(code: Int, desc: String) {
+                Log.e(TAG, "loadMusicCatalog: failed, code=$code, desc=$desc")
                 onKaraokeError(code, desc)
             }
         })
     }
 
     fun setChorusRole(roomId: String, chorusRole: TXChorusRole) {
+        Log.d(TAG, "setChorusRole: roomId=$roomId, role=$chorusRole")
         val robotID = "${roomId}_bgm"
         musicCatalogService?.generateUserSig(robotID, object : ActionCallback {
             override fun onSuccess(robotSig: String) {
+                Log.d(TAG, "setChorusRole: generateUserSig success")
                 val params = TRTCParams().apply {
                     this.sdkAppId = TUILogin.getSdkAppId()
                     strRoomId = roomId
@@ -277,6 +297,7 @@ class KaraokeStore private constructor(private val context: Context) {
             }
 
             override fun onFailed(code: Int, msg: String?) {
+                Log.e(TAG, "setChorusRole: generateUserSig failed, code=$code")
                 onKaraokeError(code, msg)
             }
 
@@ -285,38 +306,69 @@ class KaraokeStore private constructor(private val context: Context) {
     }
 
     fun startPlayback() {
+        Log.d(TAG, "startPlayback: isOwner=${isRoomOwner.value}")
         if (isRoomOwner.value == true) {
             chorusPlayer?.start()
-            switchMusicTrack(TXChorusMusicPlayer.TXChorusMusicTrack.TXChorusOriginalSong)
+            switchMusicTrack(TXChorusMusicPlayer.TXChorusMusicTrack.TXChorusOriginalSong, true)
         }
     }
 
     fun stopPlayback() {
+        Log.d(TAG, "stopPlayback: isOwner=${isRoomOwner.value}")
         if (isRoomOwner.value == true) {
             chorusPlayer?.stop()
         }
     }
 
     fun pausePlayback() {
+        Log.d(TAG, "pausePlayback: isOwner=${isRoomOwner.value}")
         if (isRoomOwner.value == true) {
             chorusPlayer?.pause()
         }
     }
 
     fun resumePlayback() {
+        Log.d(TAG, "resumePlayback: isOwner=${isRoomOwner.value}")
         if (isRoomOwner.value == true) {
             chorusPlayer?.resume()
         }
     }
 
-    fun switchMusicTrack(trackType: TXChorusMusicPlayer.TXChorusMusicTrack) {
-        if (isRoomOwner.value == true) {
-            chorusPlayer?.switchMusicTrack(trackType)
-            _currentAudioTrack.value = trackType
+    fun switchMusicTrack(
+        trackType: TXChorusMusicPlayer.TXChorusMusicTrack,
+        isInitial: Boolean = false
+    ) {
+        Log.d(TAG, "switchMusicTrack: trackType=$trackType, isInitial=$isInitial")
+        if (isRoomOwner.value != true) return
+
+        val songId = songQueue.value?.firstOrNull()?.songId ?: return
+        val media = TXCopyrightedMedia.instance()
+        media.init()
+        val hasOrigin = !media.genMusicURI(songId, 0, "audio/hi").isNullOrEmpty()
+        val hasAccompany = !media.genMusicURI(songId, 1, "audio/hi").isNullOrEmpty()
+
+        val finalTrack = if (isInitial) {
+            if (hasOrigin) TXChorusMusicPlayer.TXChorusMusicTrack.TXChorusOriginalSong
+            else if (hasAccompany) TXChorusMusicPlayer.TXChorusMusicTrack.TXChorusAccompaniment
+            else null
+        } else {
+            val isTargetAvailable = if (trackType == TXChorusMusicPlayer.TXChorusMusicTrack.TXChorusOriginalSong) hasOrigin else hasAccompany
+
+            if (!isTargetAvailable) {
+                AtomicToast.show(context, context.getString(R.string.karaoke_cant_switch_tracks), AtomicToast.Style.ERROR)
+                return
+            }
+            trackType
+        }
+
+        finalTrack?.let {
+            chorusPlayer?.switchMusicTrack(it)
+            _currentAudioTrack.value = it
         }
     }
 
     fun setPlayoutVolume(volume: Int?) {
+        Log.d(TAG, "setPlayoutVolume: volume=$volume")
         volume?.let {
             chorusPlayer?.setPlayoutVolume(it)
             _playoutVolume.value = it
@@ -324,6 +376,7 @@ class KaraokeStore private constructor(private val context: Context) {
     }
 
     fun setPublishVolume(volume: Int?) {
+        Log.d(TAG, "setPublishVolume: volume=$volume")
         volume?.let {
             chorusPlayer?.setPublishVolume(it)
             _publishVolume.value = it
@@ -331,6 +384,7 @@ class KaraokeStore private constructor(private val context: Context) {
     }
 
     fun setMusicPitch(pitch: Float?) {
+        Log.d(TAG, "setMusicPitch: pitch=$pitch")
         pitch?.let {
             chorusPlayer?.setMusicPitch(it)
             _songPitch.value = it
@@ -338,14 +392,17 @@ class KaraokeStore private constructor(private val context: Context) {
     }
 
     fun addSong(song: SongInfo) {
+        Log.d(TAG, "addSong: songId=${song.songId}, songName=${song.songName}")
         songListManager.addSong(listOf(song), object : TUIRoomDefine.ActionCallback {
             override fun onSuccess() {
+                Log.d(TAG, "addSong: success")
             }
 
             override fun onError(
                 code: TUICommonDefine.Error?,
                 message: String?,
             ) {
+                Log.e(TAG, "addSong: error, code=${code?.value}, msg=$message")
                 onKaraokeError(code?.value, message)
             }
 
@@ -353,14 +410,17 @@ class KaraokeStore private constructor(private val context: Context) {
     }
 
     fun removeSong(song: SongInfo) {
+        Log.d(TAG, "removeSong: songId=${song.songId}")
         songListManager.removeSong(listOf(song.songId), object : TUIRoomDefine.ActionCallback {
             override fun onSuccess() {
+                Log.d(TAG, "removeSong: success")
             }
 
             override fun onError(
                 code: TUICommonDefine.Error?,
                 message: String?,
             ) {
+                Log.e(TAG, "removeSong: error, code=${code?.value}, msg=$message")
                 onKaraokeError(code?.value, message)
             }
 
@@ -368,32 +428,38 @@ class KaraokeStore private constructor(private val context: Context) {
     }
 
     fun clearAllSongs() {
+        Log.d(TAG, "clearAllSongs: queueSize=${_songQueue.value?.size}")
         val currentQueue = _songQueue.value.orEmpty()
         if (currentQueue.isEmpty()) {
             return
         }
         songListManager.removeSong( currentQueue.map { it.songId }, object : TUIRoomDefine.ActionCallback {
             override fun onSuccess() {
+                Log.d(TAG, "clearAllSongs: success")
             }
 
             override fun onError(
                 code: TUICommonDefine.Error?,
                 message: String?,
             ) {
+                Log.e(TAG, "clearAllSongs: error, code=${code?.value}")
                 onKaraokeError(code?.value, message)
             }
         })
     }
 
     fun setNextSong(targetSongId: String) {
+        Log.d(TAG, "setNextSong: targetSongId=$targetSongId")
         songListManager.setNextSong(targetSongId, object : TUIRoomDefine.ActionCallback {
             override fun onSuccess() {
+                Log.d(TAG, "setNextSong: success")
             }
 
             override fun onError(
                 code: TUICommonDefine.Error?,
                 message: String?,
             ) {
+                Log.e(TAG, "setNextSong: error, code=${code?.value}")
                 onKaraokeError(code?.value, message)
             }
         })
@@ -401,6 +467,12 @@ class KaraokeStore private constructor(private val context: Context) {
 
     fun playNextSong() {
         val currentQueue = _songQueue.value.orEmpty()
+        Log.d(TAG, "playNextSong: called, isRoomOwner=${_isRoomOwner.value}, queueSize=${currentQueue.size}, isSwitchingToNext=$_isSwitchingToNext, currentPlaying=${_currentPlayingSong.value?.songName}")
+        if (_isRoomOwner.value != true) {
+            Log.d(TAG, "playNextSong: not room owner, set IDLE")
+            _playbackState.value = PlaybackState.IDLE
+            return
+        }
         if (currentQueue.isEmpty()) {
             Log.d(TAG, "playNextSong: song queue is empty, skip playNextSong")
             _playbackState.value = PlaybackState.IDLE
@@ -411,7 +483,7 @@ class KaraokeStore private constructor(private val context: Context) {
             return
         }
         _isSwitchingToNext = true
-        Log.d(TAG, "playNextSong: start switching to next song")
+        Log.d(TAG, "playNextSong: start switching to next song, will remove first: ${currentQueue.firstOrNull()?.songName}")
 
         songListManager.playNextSong(object : TUIRoomDefine.ActionCallback {
             override fun onSuccess() {
@@ -430,30 +502,36 @@ class KaraokeStore private constructor(private val context: Context) {
     }
 
     fun setIsDisplayScoreView(isDisplay: Boolean) {
+        Log.d(TAG, "setIsDisplayScoreView: isDisplay=$isDisplay")
         isAwaitingScoreDisplay = isDisplay
     }
 
     fun setFullScreenUIMode(isFullScreen: Boolean) {
+        Log.d(TAG, "setFullScreenUIMode: isFullScreen=$isFullScreen")
         this.isFullScreenUIMode = isFullScreen
     }
 
     fun updatePlaybackStatus(state: PlaybackState) {
+        Log.d(TAG, "updatePlaybackStatus: state=$state, currentState=${_playbackState.value}")
         if (_playbackState.value == PlaybackState.STOP) {
             _playbackState.value = state
         }
     }
 
     fun setScoringEnabled(enable: Boolean) {
+        Log.d(TAG, "setScoringEnabled: enable=$enable")
         _enableScore.value = enable
         val metadata = hashMapOf(KEY_ENABLE_SCORE to enable.toString())
         TUIRoomEngine.sharedInstance().setRoomMetadataByAdmin(metadata, null)
     }
 
     fun updateSongCatalog(selectedList: List<MusicInfo>) {
+        Log.d(TAG, "updateSongCatalog: count=${selectedList.size}")
         _songCatalog.value = selectedList
     }
 
     private fun setupChorusPlayer(roomId: String) {
+        Log.d(TAG, "setupChorusPlayer: roomId=$roomId, isOwner=${_isRoomOwner.value}")
         chorusPlayer = TXChorusMusicPlayer.create(trtcCloud, roomId, chorusMusicObserver)
         val role = if (_isRoomOwner.value == true) {
             TXChorusRole.TXChorusRoleLeadSinger
@@ -464,16 +542,28 @@ class KaraokeStore private constructor(private val context: Context) {
     }
 
     private fun getWaitingList() {
+        Log.d(TAG, "getWaitingList")
         val allSongsAccumulator = mutableListOf<SongInfo>()
-        fetchNextPage(null, allSongsAccumulator)
+        fetchNextPage(null, allSongsAccumulator, false)
     }
 
-    private fun fetchNextPage(cursor: String?, currentAccumulator: MutableList<SongInfo>) {
+    private fun fetchWaitingListAndLoadFirst() {
+        Log.d(TAG, "fetchWaitingListAndLoadFirst: clearing loadingMusicId=$_loadingMusicId")
+        _loadingMusicId = null
+        val allSongsAccumulator = mutableListOf<SongInfo>()
+        fetchNextPage(null, allSongsAccumulator, true)
+    }
+
+    private fun fetchNextPage(cursor: String?, currentAccumulator: MutableList<SongInfo>, loadFirstAfterFetch: Boolean) {
         val count = 20
         songListManager.getWaitingList(cursor, count, object : TUISongListManager.SongListCallback {
             override fun onSuccess(result: SongListResult?) {
                 if (result == null) {
                     _songQueue.value = currentAccumulator
+                    if (loadFirstAfterFetch) {
+                        Log.d(TAG, "fetchNextPage: fetch complete (null result), loading first song")
+                        loadMusicByLeadSinger()
+                    }
                     return
                 }
                 if (!result.songList.isNullOrEmpty()) {
@@ -483,23 +573,32 @@ class KaraokeStore private constructor(private val context: Context) {
                 val hasMoreData = !nextCursor.isNullOrEmpty()
 
                 if (hasMoreData) {
-                    fetchNextPage(nextCursor, currentAccumulator)
+                    fetchNextPage(nextCursor, currentAccumulator, loadFirstAfterFetch)
                 } else {
-                    Log.i(TAG, "finished fetching all songs. total count: ${currentAccumulator.size}")
+                    Log.i(TAG, "finished fetching all songs. total count: ${currentAccumulator.size}, songs=${currentAccumulator.map { it.songName }}")
                     _songQueue.value = currentAccumulator
+                    if (loadFirstAfterFetch) {
+                        Log.d(TAG, "fetchNextPage: fetch complete, loading first song: ${currentAccumulator.firstOrNull()?.songName}")
+                        loadMusicByLeadSinger()
+                    }
                 }
             }
 
             override fun onError(code: TUICommonDefine.Error?, msg: String?) {
                 onKaraokeError(code?.value, msg)
+                if (loadFirstAfterFetch) {
+                    loadMusicByLeadSinger()
+                }
             }
         })
     }
 
     private fun fetchRoomMetadata() {
+        Log.d(TAG, "fetchRoomMetadata")
         TUIRoomEngine.sharedInstance().getRoomMetadata(
             listOf(KEY_ENABLE_SCORE, KEY_ENABLE_REQUEST_MUSIC), object : GetRoomMetadataCallback {
                 override fun onSuccess(map: HashMap<String?, String?>?) {
+                    Log.d(TAG, "fetchRoomMetadata: success, map=$map")
                     map?.let {
                         if (isRoomOwner.value == true) {
                             if (_enableScore.value == false) {
@@ -514,6 +613,7 @@ class KaraokeStore private constructor(private val context: Context) {
                 }
 
                 override fun onError(error: TUICommonDefine.Error?, message: String) {
+                    Log.e(TAG, "fetchRoomMetadata: error, code=${error?.value}, msg=$message")
                     onError(error, message)
                 }
             })
@@ -543,6 +643,7 @@ class KaraokeStore private constructor(private val context: Context) {
                 reason: SongListChangeReason?,
                 changedSongs: MutableList<SongInfo?>?,
             ) {
+                Log.d(TAG, "onWaitingListChanged: reason=$reason, changedCount=${changedSongs?.size}")
                 updateSongQueue(reason, changedSongs)
                 handlePlayOperation(reason, changedSongs)
             }
@@ -558,7 +659,7 @@ class KaraokeStore private constructor(private val context: Context) {
         }
         Log.d(
             TAG,
-            "onWaitingListChanged, reason: ${reason.name}, changedSongs: ${changedSongs.joinToString { it.toString() }}"
+            "updateSongQueue: reason=${reason.name}, changedSongs=${changedSongs.mapNotNull { it?.songName }}, currentQueue=${currentQueue.map { it.songName }}"
         )
         when (reason) {
             SongListChangeReason.ADD -> {
@@ -567,44 +668,59 @@ class KaraokeStore private constructor(private val context: Context) {
                         currentQueue.add(newSong)
                     }
                 }
+                _songQueue.value = currentQueue
             }
 
             SongListChangeReason.REMOVE -> {
                 val removeSongIds = changedSongs.filterNotNull().map { it.songId }
                 val songsToRemove = currentQueue.filter { it.songId in removeSongIds }
                 currentQueue.removeAll(songsToRemove)
+                _songQueue.value = currentQueue
+                Log.d(TAG, "updateSongQueue REMOVE: removed=${songsToRemove.map { it.songName }}, remaining=${currentQueue.map { it.songName }}")
             }
 
             SongListChangeReason.ORDER_CHANGED -> {
+                if (_isSwitchingToNext) {
+                    val songToRemove = changedSongs.filterNotNull().firstOrNull()
+                    if (songToRemove != null) {
+                        currentQueue.removeAll { it.songId == songToRemove.songId }
+                        _songQueue.value = currentQueue
+                        Log.d(TAG, "updateSongQueue ORDER_CHANGED (switching): removed ${songToRemove.songName}, remaining=${currentQueue.map { it.songName }}")
+                        return
+                    }
+                }
+                
                 val songToMoveUp = changedSongs.filterNotNull().firstOrNull()
                 if (songToMoveUp == null) {
+                    Log.d(TAG, "updateSongQueue ORDER_CHANGED: no song to move")
                     return
                 }
+                
                 currentQueue.removeAll { it.songId == songToMoveUp.songId }
                 val targetIndex = minOf(1, currentQueue.size)
                 currentQueue.add(targetIndex, songToMoveUp)
-                _songQueue.postValue(currentQueue)
-                return
+                _songQueue.value = currentQueue
+                Log.d(TAG, "updateSongQueue ORDER_CHANGED: moved ${songToMoveUp.songName} to index $targetIndex, newQueue=${currentQueue.map { it.songName }}")
             }
 
             SongListChangeReason.UNKNOWN -> {
                 val newQueue = changedSongs.filterNotNull()
-                _songQueue.postValue(newQueue)
+                Log.d(TAG, "updateSongQueue UNKNOWN: using server queue=${newQueue.map { it.songName }}")
+                _songQueue.value = newQueue
                 return
             }
         }
-        _songQueue.value = currentQueue
 
         val currentPlayingId = _currentPlayingSong.value?.songId
         if (!currentPlayingId.isNullOrEmpty()) {
-
-            val songInNewQueue = currentQueue.find { it.songId == currentPlayingId }
+            val finalQueue = _songQueue.value.orEmpty()
+            val songInNewQueue = finalQueue.find { it.songId == currentPlayingId }
             if (songInNewQueue != null) {
                 _currentPlayingSong.postValue(songInNewQueue)
                 Log.d(TAG, "Sync current playing info from new queue: ${songInNewQueue.songName}")
             }
         }
-        Log.d(TAG, "onWaitingListChanged, new songQueue: " + gson.toJson(songQueue.value))
+        Log.d(TAG, "updateSongQueue: final songQueue=${_songQueue.value?.map { it.songName }}")
     }
 
     private fun handlePlayOperation(
@@ -614,26 +730,64 @@ class KaraokeStore private constructor(private val context: Context) {
         if (reason == null || changedSongs.isNullOrEmpty()) {
             return
         }
+        Log.d(TAG, "handlePlayOperation: reason=$reason, changedSongs=${changedSongs.mapNotNull { it?.songName }}")
         when (reason) {
             SongListChangeReason.ADD -> {
                 val isNeedLoadMusic = songQueue.value?.size == changedSongs.size
+                Log.d(TAG, "handlePlayOperation ADD: queueSize=${songQueue.value?.size}, changedSize=${changedSongs.size}, isNeedLoadMusic=$isNeedLoadMusic")
                 if (isNeedLoadMusic) loadMusicByLeadSinger()
             }
 
             SongListChangeReason.REMOVE -> {
                 val currentPlayingId = _currentPlayingSong.value?.songId
                 val isCurrentSongAffected = changedSongs.any { it?.songId == currentPlayingId }
+                Log.d(TAG, "handlePlayOperation REMOVE: currentPlayingId=$currentPlayingId, isCurrentSongAffected=$isCurrentSongAffected, isSwitchingToNext=$_isSwitchingToNext")
 
-                if (isCurrentSongAffected && _isRoomOwner.value == true) {
-                    Log.d(TAG, "handlePlayOperation REMOVE: current song removed, isSwitchingToNext=$_isSwitchingToNext")
-                    _isCurrentSongRemoved = true
-                    stopPlayback()
-                    loadMusicByLeadSinger()
-                    _isSwitchingToNext = false
+                if (_isRoomOwner.value == true) {
+                    if (_isSwitchingToNext) {
+                        Log.d(TAG, "handlePlayOperation REMOVE: switching to next, refetch queue and load first song")
+                        _isCurrentSongRemoved = true
+                        stopPlayback()
+                        
+                        fetchWaitingListAndLoadFirst()
+                    } else if (isCurrentSongAffected) {
+                        Log.d(TAG, "handlePlayOperation REMOVE: current song removed manually")
+                        _isCurrentSongRemoved = true
+                        stopPlayback()
+                        loadMusicByLeadSinger()
+                    }
                 }
             }
 
-            SongListChangeReason.ORDER_CHANGED, SongListChangeReason.UNKNOWN -> {
+            SongListChangeReason.ORDER_CHANGED -> {
+                if (_isSwitchingToNext && _isRoomOwner.value == true) {
+                    val currentPlayingId = _currentPlayingSong.value?.songId
+                    val newQueueFirst = _songQueue.value?.firstOrNull()
+                    Log.d(TAG, "handlePlayOperation ORDER_CHANGED: isSwitching=true, currentPlayingId=$currentPlayingId, newQueueFirst=${newQueueFirst?.songName}")
+                    
+                    if (newQueueFirst != null && newQueueFirst.songId != currentPlayingId) {
+                        Log.d(TAG, "handlePlayOperation ORDER_CHANGED: switching to next, refetch queue and load first song")
+                        _isCurrentSongRemoved = true
+                        stopPlayback()
+                        fetchWaitingListAndLoadFirst()
+                    }
+                }
+            }
+            
+            SongListChangeReason.UNKNOWN -> {
+                if (_isSwitchingToNext && _isRoomOwner.value == true) {
+                    val currentPlayingId = _currentPlayingSong.value?.songId
+                    val newQueue = changedSongs.filterNotNull()
+                    val isCurrentSongStillInQueue = newQueue.any { it.songId == currentPlayingId }
+                    Log.d(TAG, "handlePlayOperation UNKNOWN: isSwitching=true, currentPlayingId=$currentPlayingId, isCurrentSongStillInQueue=$isCurrentSongStillInQueue, newQueue=${newQueue.map { it.songName }}")
+                    
+                    if (!isCurrentSongStillInQueue || (newQueue.isNotEmpty() && newQueue.first().songId != currentPlayingId)) {
+                        Log.d(TAG, "handlePlayOperation UNKNOWN: switching to next, refetch queue and load first song")
+                        _isCurrentSongRemoved = true
+                        stopPlayback()
+                        fetchWaitingListAndLoadFirst()
+                    }
+                }
             }
         }
     }
@@ -643,10 +797,12 @@ class KaraokeStore private constructor(private val context: Context) {
             roomId: String?,
             reason: RoomDismissedReason?,
         ) {
+            Log.d(TAG, "onRoomDismissed: roomId=$roomId, reason=$reason")
             destroy()
         }
 
         override fun onRoomMetadataChanged(key: String?, value: String?) {
+            Log.d(TAG, "onRoomMetadataChanged: key=$key, value=$value")
             when (key) {
                 KEY_ENABLE_SCORE -> {
                     _enableScore.value = value?.toBoolean() ?: true
@@ -762,8 +918,21 @@ class KaraokeStore private constructor(private val context: Context) {
                 lyricList: List<TXChorusMusicPlayer.TXLyricLine>,
                 pitchList: List<TXChorusMusicPlayer.TXReferencePitch>,
             ) {
+                Log.d(TAG, "onChorusMusicLoadSucceed: musicId=$musicId, lyricCount=${lyricList.size}, pitchCount=${pitchList.size}, loadingMusicId=$_loadingMusicId, isSwitching=$_isSwitchingToNext, isRemoved=$_isCurrentSongRemoved")
+                
+                if (_isCurrentSongRemoved) {
+                    Log.d(TAG, "onChorusMusicLoadSucceed: ignoring callback because current song was removed")
+                    return
+                }
+                
+                if (_loadingMusicId != null && _loadingMusicId != musicId) {
+                    Log.d(TAG, "onChorusMusicLoadSucceed: ignoring stale callback, expected=$_loadingMusicId, got=$musicId")
+                    return
+                }
+                
                 val queueFirst = _songQueue.value?.firstOrNull()
                 if (queueFirst != null && queueFirst.songId != musicId) {
+                    Log.d(TAG, "onChorusMusicLoadSucceed: musicId mismatch with queue first, reloading. queueFirst=${queueFirst.songId}")
                     loadMusicByLeadSinger()
                     return
                 }
@@ -783,24 +952,32 @@ class KaraokeStore private constructor(private val context: Context) {
                 _currentPlayingSong.postValue(getSongInfoById(musicId))
                 _loadingMusicId = null
                 _isCurrentSongRemoved = false
+                _isSwitchingToNext = false
                 startPlayback()
             }
 
             override fun onChorusError(error: TXChorusMusicPlayer.TXChorusError, errMsg: String) {
+                Log.e(TAG, "onChorusError: error=$error, errMsg=$errMsg")
                 if (error == TXChorusMusicPlayer.TXChorusError.TXChorusErrorMusicLoadFailed) {
-                    onKaraokeError(error.ordinal, errMsg)
+                    val content = context.getString(R.string.karaoke_music_loading_error)
+                    AtomicToast.show(context,"$content (${error.ordinal})", AtomicToast.Style.ERROR)
+                    playNextSong()
                 }
             }
 
             override fun onNetworkQualityUpdated(userId: Int, upQuality: Int, downQuality: Int) {}
 
             override fun onChorusRequireLoadMusic(musicId: String) {
+                Log.d(TAG, "onChorusRequireLoadMusic: musicId=$musicId")
                 loadMusic(musicId)
             }
 
-            override fun onChorusMusicLoadProgress(musicId: String, progress: Float) {}
+            override fun onChorusMusicLoadProgress(musicId: String, progress: Float) {
+                Log.d(TAG, "onChorusMusicLoadProgress: musicId=$musicId, progress=$progress")
+            }
 
             override fun onChorusStarted() {
+                Log.d(TAG, "onChorusStarted")
                 _playbackState.value = PlaybackState.START
                 isAwaitingScoreDisplay = true
                 if (isRoomOwner.value == true) {
@@ -809,6 +986,7 @@ class KaraokeStore private constructor(private val context: Context) {
             }
 
             override fun onChorusPaused() {
+                Log.d(TAG, "onChorusPaused: isOwner=${_isRoomOwner.value}, queueSize=${_songQueue.value?.size}")
                 if (_isRoomOwner.value == false && _songQueue.value.orEmpty().isEmpty()) {
                     return
                 }
@@ -816,11 +994,12 @@ class KaraokeStore private constructor(private val context: Context) {
             }
 
             override fun onChorusResumed() {
+                Log.d(TAG, "onChorusResumed")
                 _playbackState.value = PlaybackState.RESUME
             }
 
             override fun onChorusStopped() {
-                Log.d(TAG, "onChorusStopped: isManualStop=$_isManualStop, isSwitchingToNext=$_isSwitchingToNext, isCurrentSongRemoved=$_isCurrentSongRemoved")
+                Log.d(TAG, "onChorusStopped: isManualStop=$_isManualStop, isSwitchingToNext=$_isSwitchingToNext, isCurrentSongRemoved=$_isCurrentSongRemoved, isRoomOwner=${_isRoomOwner.value}, queueSize=${_songQueue.value?.size}, currentPlaying=${_currentPlayingSong.value?.songName}")
 
                 if (_isManualStop) {
                     _isManualStop = false
@@ -837,11 +1016,7 @@ class KaraokeStore private constructor(private val context: Context) {
                     _playbackState.value = PlaybackState.STOP
                     return
                 }
-                if (_isRoomOwner.value == false && _songQueue.value.orEmpty().isEmpty()) {
-                    _playbackState.value = PlaybackState.IDLE
-                    return
-                }
-                if (isRoomOwner.value == true) {
+                if (_isRoomOwner.value == true) {
                     enableReverb(false)
                 }
                 _playbackState.value = PlaybackState.STOP
@@ -883,6 +1058,7 @@ class KaraokeStore private constructor(private val context: Context) {
                 averageScore: Int,
                 currentLine: Int,
             ) {
+                Log.d(TAG, "onVoiceScoreUpdated: current=$currentScore, avg=$averageScore, line=$currentLine")
                 _currentScore.value = currentScore
                 _averageScore.value = averageScore
             }
@@ -893,6 +1069,7 @@ class KaraokeStore private constructor(private val context: Context) {
         }
 
     private fun applyDefaultAudioEffects() {
+        Log.d(TAG, "applyDefaultAudioEffects")
         enableDsp()
         enableHIFI()
         enableAIECModel2()
@@ -969,6 +1146,7 @@ class KaraokeStore private constructor(private val context: Context) {
     }
 
     private fun enableReverb(enable: Boolean) {
+        Log.d(TAG, "enableReverb: enable=$enable")
         val params = mapOf(
             "enable" to enable,
             "RoomSize" to 60,
@@ -1015,10 +1193,10 @@ class KaraokeStore private constructor(private val context: Context) {
         Log.e(TAG, "errorCode: $errorCode, errorMessage: $errorMessage")
 
         mainHandler.post {
-            if (errorMessage == "Music load failed") {
-                playNextSong()
-                val content = context.getString(R.string.karaoke_music_loading_error)
-                AtomicToast.show(context,"$content ($errorCode)", AtomicToast.Style.ERROR)
+            val frequencyLimit = -2
+            if (errorCode == frequencyLimit) {
+                val content = context.getString(R.string.common_client_error_freq_limit)
+                AtomicToast.show(context,"$content (${errorCode})", AtomicToast.Style.ERROR)
             } else {
                 AtomicToast.show(context,"$errorMessage ($errorCode)", AtomicToast.Style.ERROR)
             }

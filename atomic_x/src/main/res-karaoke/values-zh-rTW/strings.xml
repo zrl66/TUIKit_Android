@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
 <resources>
+    <string name="common_client_error_freq_limit">請求被限頻，請稍後重試</string>
     <string name="karaoke_audience_waiting_tips">等待點歌中…</string>
     <string name="karaoke_change_reverb">混響</string>
     <string name="karaoke_exit_order">退出點歌</string>
@@ -24,6 +25,7 @@
     <string name="karaoke_setting_tune">調音</string>
     <string name="karaoke_singing_score">演唱得分</string>
     <string name="karaoke_point">分</string>
+    <string name="karaoke_cant_switch_tracks">目前音樂不支援切換音軌現</string>
     <string name="karaoke_song_pause">歌曲暫停中...</string>
     <string name="karaoke_voice_child">熊孩子</string>
     <string name="karaoke_voice_ethereal">空靈</string>

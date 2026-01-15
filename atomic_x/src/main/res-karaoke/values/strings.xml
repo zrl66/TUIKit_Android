@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
 <resources>
+    <string name="common_client_error_freq_limit">Request Rate Limited, Please Try Again Later</string>
     <string name="karaoke_audience_waiting_tips">Waiting for song selection…</string>
     <string name="karaoke_change_reverb">Reverb</string>
     <string name="karaoke_exit_order">Exit Order</string>
@@ -24,6 +25,7 @@
     <string name="karaoke_setting_tune">Tune</string>
     <string name="karaoke_singing_score">Singing Score</string>
     <string name="karaoke_point">Points</string>
+    <string name="karaoke_cant_switch_tracks">The current music does not support switching audio tracks</string>
     <string name="karaoke_song_pause">Song paused...</string>
     <string name="karaoke_voice_child">Naughty child</string>
     <string name="karaoke_voice_ethereal">Ethereal</string>

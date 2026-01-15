@@ -50,6 +50,7 @@ open class AtomicPopover(
     private var isAnimating = false
     private val showAnimation: Boolean = panelGravity == PanelGravity.BOTTOM
     private var useTransparentBackground: Boolean = false
+    private var showMask: Boolean = true
 
     enum class PanelGravity {
         BOTTOM, CENTER
@@ -131,7 +132,10 @@ open class AtomicPopover(
                 }
             }
 
-            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            if (showMask) {
+                addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            }
+            addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
         }
 
         setPanelBackground()
@@ -230,6 +234,13 @@ open class AtomicPopover(
         }
     }
 
+    fun setShowMask(show: Boolean) {
+        showMask = show
+        if (isShowing) {
+            setMaskColor()
+        }
+    }
+
     private fun showWithAnimation() {
         contentContainer.visibility = View.VISIBLE
 
@@ -313,8 +324,15 @@ open class AtomicPopover(
     }
 
     private fun setMaskColor() {
+        if (!showMask) {
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            window?.setDimAmount(0f)
+            return
+        }
+        window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         val maskColor = getCurrentTokens(context).color.bgColorMask
-        window?.setDimAmount(Color.alpha(maskColor) / 255f)
+        val dimAmount = Color.alpha(maskColor) / 255f
+        window?.setDimAmount(dimAmount)
     }
 
     private fun setPanelBackground() {
