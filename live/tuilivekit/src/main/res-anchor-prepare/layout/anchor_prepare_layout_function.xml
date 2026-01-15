@@ -134,7 +134,7 @@
             android:layout_height="20dp"
             android:layout_below="@+id/iv_video_setting"
             android:gravity="center_horizontal"
-            android:text="@string/common_dashboard_video_resolution"
+            android:text="@string/common_video_settings"
             android:textColor="@color/text_color_primary"
             android:textSize="@dimen/text_size_12" />
     </RelativeLayout>

@@ -8,7 +8,7 @@
         android:id="@+id/gift_group"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="left"
+        android:layout_gravity="start"
         android:layout_marginStart="8dp"
         android:layout_marginTop="20dp"
         android:background="@drawable/gift_bg_show">

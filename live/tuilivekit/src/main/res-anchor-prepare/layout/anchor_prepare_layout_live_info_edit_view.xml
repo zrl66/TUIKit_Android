@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layoutDirection="locale"
     android:background="@drawable/anchor_prepare_live_info_edit_background">
 
     <FrameLayout
@@ -12,7 +13,7 @@
         android:layout_height="88dp"
         android:layout_marginStart="12dp"
         android:layout_marginTop="12dp"
-        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <androidx.constraintlayout.utils.widget.ImageFilterView
@@ -41,7 +42,7 @@
         android:layout_marginStart="14dp"
         android:layout_marginTop="12dp"
         android:orientation="vertical"
-        app:layout_constraintLeft_toRightOf="@+id/fl_cover_edit"
+        app:layout_constraintStart_toEndOf="@+id/fl_cover_edit"
         app:layout_constraintTop_toTopOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -57,12 +58,13 @@
                 android:maxLines="1"
                 android:paddingEnd="20dp"
                 android:textColor="@color/common_design_standard_g8"
+                android:textAlignment="viewStart"
                 android:textFontWeight="500"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="LabelFor,RtlSymmetry,TextFields,UnusedAttribute"
+                tools:ignore="LabelFor,TextFields,UnusedAttribute"
                 tools:text="Stream With Sam111" />
 
 
@@ -74,7 +76,7 @@
                 android:background="@drawable/anchor_prepare_live_stream_edit_icon"
                 android:importantForAccessibility="no"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -91,7 +93,7 @@
             android:layout_width="wrap_content"
             android:layout_height="22dp"
             android:layout_marginTop="7dp"
-            android:gravity="center_vertical|left"
+            android:gravity="center_vertical|start"
             android:orientation="horizontal"
             tools:ignore="RtlHardcoded">
 
@@ -106,7 +108,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:layout_marginLeft="4dp"
+                android:layout_marginStart="4dp"
                 android:gravity="center"
                 android:text="@string/common_stream_privacy_status"
                 android:textColor="@color/text_color_primary"

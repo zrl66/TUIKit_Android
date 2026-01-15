@@ -98,7 +98,7 @@ class UserInfoDialog(
         }
         textUserName.text =
             if (TextUtils.isEmpty(userInfo.userName)) userInfo.userID else userInfo.userName
-        textUserId.text = "UserId:" + userInfo.userID
+        textUserId.text = context.getString(R.string.common_user_id, userInfo.userID)
         val avatarUrl = userInfo.avatarURL
         imageAvatar.setContent(AvatarContent.URL(avatarUrl, R.drawable.livekit_ic_avatar))
 

@@ -16,7 +16,7 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:layout_centerVertical="true"
-            android:src="@drawable/audience_list_return_arrow" />
+            android:src="@drawable/livekit_return_arrow" />
 
         <io.trtc.tuikit.atomicx.widget.basicwidget.label.AtomicLabel
             android:layout_width="wrap_content"

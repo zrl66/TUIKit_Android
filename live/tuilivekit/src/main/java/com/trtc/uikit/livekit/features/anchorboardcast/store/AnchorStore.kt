@@ -14,7 +14,9 @@ import com.trtc.uikit.livekit.features.anchorboardcast.store.dispatcher.AnchorVi
 import com.trtc.uikit.livekit.features.anchorboardcast.store.observer.IMFriendshipListener
 import com.trtc.uikit.livekit.features.anchorboardcast.store.observer.RoomEngineObserver
 import io.trtc.tuikit.atomicxcore.api.live.LiveAudienceStore
+import io.trtc.tuikit.atomicxcore.api.live.LiveEndedReason
 import io.trtc.tuikit.atomicxcore.api.live.LiveInfo
+import io.trtc.tuikit.atomicxcore.api.live.LiveSummaryStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -80,7 +82,8 @@ class AnchorStore(liveInfo: LiveInfo) {
         lockVideoUserList = _lockVideoUserList
     )
 
-    private lateinit var liveAudienceStore: LiveAudienceStore
+    private var liveAudienceStore: LiveAudienceStore
+    private var liveSummaryStore: LiveSummaryStore
     private val logger = LiveKitLogger.getFeaturesLogger("AnchorStore")
     private val userStore: UserStore = UserStore()
     private val mediaStore: MediaStore = MediaStore()
@@ -95,6 +98,7 @@ class AnchorStore(liveInfo: LiveInfo) {
         addObserver()
         setRoomId(liveInfo.liveID)
         liveAudienceStore = LiveAudienceStore.create(liveInfo.liveID)
+        liveSummaryStore = LiveSummaryStore.create(liveInfo.liveID)
         mediaStore.setCustomVideoProcess()
         mediaStore.enableMultiPlaybackQuality(true)
         initCreateRoomState(liveInfo)
@@ -190,7 +194,16 @@ class AnchorStore(liveInfo: LiveInfo) {
         listenerDispatcher.notifyAnchorViewListener { it.onClickFloatWindow() }
     }
 
-    fun notifyRoomExit() {
+    fun notifyRoomExit(reason: LiveEndedReason = LiveEndedReason.ENDED_BY_HOST) {
+        if (reason == LiveEndedReason.ENDED_BY_SERVER) {
+            val summary = liveSummaryStore.liveSummaryState.summaryData.value
+            externalState.viewCount = summary.totalViewers.toLong()
+            externalState.duration = summary.totalDuration
+            externalState.messageCount = summary.totalMessageSent.toLong()
+            externalState.giftIncome = summary.totalGiftCoins.toLong()
+            externalState.giftSenderCount = summary.totalGiftUniqueSenders.toLong()
+            externalState.likeCount = summary.totalLikesReceived.toLong()
+        }
         listenerDispatcher.notifyAnchorViewListener { it.onEndLiving(externalState) }
     }
 

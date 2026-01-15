@@ -29,8 +29,8 @@ class SingleBattleScoreView @JvmOverloads constructor(
         mImageDivider = findViewById(R.id.iv_divider)
         mTextScoreLeft = findViewById(R.id.tv_score_left)
         mTextScoreRight = findViewById(R.id.tv_score_right)
-        mTextScoreLeft.text = "0"
-        mTextScoreRight.text = "0"
+        mTextScoreLeft.text = String.format("%d", 0)
+        mTextScoreRight.text = String.format("%d", 0)
     }
 
     fun updateScores(scoreLeft: Int, scoreRight: Int) {

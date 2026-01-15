@@ -7,12 +7,13 @@ import android.os.Handler
 import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
+import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.TextView
 import com.trtc.uikit.livekit.R
 
 class NetworkBadTipsDialog(context: Context) :
-    Dialog(context, com.trtc.tuikit.common.R.style.TUICommonBottomDialogTheme) {
+    Dialog(context) {
 
     companion object {
         private const val NETWORK_BAD_TIPS_DURATION = 5000L
@@ -22,6 +23,9 @@ class NetworkBadTipsDialog(context: Context) :
     private lateinit var mTextSwitchNetwork: TextView
 
     init {
+        window?.apply {
+            clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        }
         initView()
     }
 

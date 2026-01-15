@@ -9,6 +9,7 @@ import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
@@ -26,6 +27,7 @@ class GiftBulletFrameLayout @JvmOverloads constructor(private val mContext: Cont
     ) {
     private val handler = Handler(Looper.getMainLooper())
     private val layoutInflater: LayoutInflater = LayoutInflater.from(mContext)
+    private val isRtl: Boolean = mContext.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
     private var giftEndAnimationRunnable: Runnable? = null
     private var giftGroup: RelativeLayout? = null
     private var imageGiftIcon: ImageFilterView? = null
@@ -91,8 +93,9 @@ class GiftBulletFrameLayout @JvmOverloads constructor(private val mContext: Cont
         visibility = VISIBLE
         imageGiftIcon?.setVisibility(VISIBLE)
         val duration = 400
+        val startX = if (isRtl) getWidth().toFloat() else -getWidth().toFloat()
         val giftLayoutAnimator = AnimationUtils.createFadesInFromLtoR(
-            giftGroup, -getWidth().toFloat(), 0f, duration, OvershootInterpolator()
+            giftGroup, startX, 0f, duration, OvershootInterpolator()
         )
         giftLayoutAnimator.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationStart(animation: Animator) {
@@ -101,7 +104,7 @@ class GiftBulletFrameLayout @JvmOverloads constructor(private val mContext: Cont
         })
 
         val giftImageAnimator = AnimationUtils.createFadesInFromLtoR(
-            imageGiftIcon, -getWidth().toFloat(), 0f, duration, DecelerateInterpolator()
+            imageGiftIcon, startX, 0f, duration, DecelerateInterpolator()
         )
         giftImageAnimator.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationStart(animation: Animator) {
@@ -116,8 +119,9 @@ class GiftBulletFrameLayout @JvmOverloads constructor(private val mContext: Cont
     }
 
     fun endAnimation() {
+        val endY = if (isRtl) 100f else -100f
         val fadeAnimator = AnimationUtils.createFadesOutAnimator(
-            this, 0f, -100f, 500, 0
+            this, 0f, endY, 500, 0
         )
         val fadeAnimator2 = AnimationUtils.createFadesOutAnimator(
             this, 100f, 0f, 0, 0

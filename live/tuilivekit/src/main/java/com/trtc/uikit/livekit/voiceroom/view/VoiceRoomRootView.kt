@@ -83,6 +83,7 @@ import io.trtc.tuikit.atomicxcore.api.live.BattleStore
 import io.trtc.tuikit.atomicxcore.api.live.CoGuestStore
 import io.trtc.tuikit.atomicxcore.api.live.CoHostStatus
 import io.trtc.tuikit.atomicxcore.api.live.CoHostStore
+import io.trtc.tuikit.atomicxcore.api.live.DeviceControlPolicy
 import io.trtc.tuikit.atomicxcore.api.live.GuestListener
 import io.trtc.tuikit.atomicxcore.api.live.LiveAudienceStore
 import io.trtc.tuikit.atomicxcore.api.live.LiveEndedReason
@@ -91,6 +92,7 @@ import io.trtc.tuikit.atomicxcore.api.live.LiveInfoCompletionHandler
 import io.trtc.tuikit.atomicxcore.api.live.LiveKickedOutReason
 import io.trtc.tuikit.atomicxcore.api.live.LiveListListener
 import io.trtc.tuikit.atomicxcore.api.live.LiveListStore
+import io.trtc.tuikit.atomicxcore.api.live.LiveSeatListener
 import io.trtc.tuikit.atomicxcore.api.live.LiveSeatStore
 import io.trtc.tuikit.atomicxcore.api.live.LiveUserInfo
 import io.trtc.tuikit.atomicxcore.api.live.MetaDataCompletionHandler
@@ -263,6 +265,7 @@ class VoiceRoomRootView @JvmOverloads constructor(
         coGuestStore.addGuestListener(guestListener)
         seatGridView?.addObserver(seatGridViewObserver)
         liveListStore.addLiveListListener(liveListListener)
+        liveSeatStore.addLiveSeatEventListener(liveSeatListener)
         TUICore.registerEvent(EVENT_KEY_LIVE_KIT, EVENT_SUB_KEY_CLOSE_VOICE_ROOM, this)
     }
 
@@ -272,6 +275,7 @@ class VoiceRoomRootView @JvmOverloads constructor(
         coGuestStore.removeGuestListener(guestListener)
         seatGridView?.removeObserver(seatGridViewObserver)
         liveListStore.removeLiveListListener(liveListListener)
+        liveSeatStore.removeLiveSeatEventListener(liveSeatListener)
         TUICore.unRegisterEvent(this)
     }
 
@@ -1050,7 +1054,7 @@ class VoiceRoomRootView @JvmOverloads constructor(
 
     private val liveListListener = object : LiveListListener() {
         override fun onLiveEnded(liveID: String, reason: LiveEndedReason, message: String) {
-            if (isOwner()) return
+            if (reason == LiveEndedReason.ENDED_BY_HOST && isOwner()) return
             AtomicToast.show(
                 context,
                 context.getString(R.string.common_room_destroy),
@@ -1079,6 +1083,16 @@ class VoiceRoomRootView @JvmOverloads constructor(
                 params.put("roomId", this@VoiceRoomRootView.liveID)
                 TUICore.notifyEvent(EVENT_KEY_LIVE_KIT, EVENT_SUB_KEY_FINISH_ACTIVITY, params)
             }
+        }
+    }
+
+    private val liveSeatListener = object : LiveSeatListener() {
+        override fun onLocalMicrophoneClosedByAdmin() {
+            AtomicToast.show(context,context.getString(R.string.common_mute_audio_by_master), AtomicToast.Style.INFO)
+        }
+
+        override fun onLocalMicrophoneOpenedByAdmin(policy: DeviceControlPolicy) {
+            AtomicToast.show(context,context.getString(R.string.common_un_mute_audio_by_master), AtomicToast.Style.INFO)
         }
     }
 

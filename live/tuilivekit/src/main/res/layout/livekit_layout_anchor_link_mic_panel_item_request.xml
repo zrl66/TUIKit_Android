@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="60dp"
     android:background="@color/common_design_standard_g2"
-    android:gravity="start">
+    android:layoutDirection="locale">
 
     <io.trtc.tuikit.atomicx.widget.basicwidget.avatar.AtomicAvatar
         android:id="@+id/iv_head"
@@ -27,6 +27,7 @@
         android:textSize="16sp"
         android:maxLines="1"
         android:ellipsize="end"
+        android:textAlignment="viewStart"
         android:textColor="@color/common_design_standard_g7" />
 
     <TextView

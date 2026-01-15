@@ -294,7 +294,7 @@ class AnchorView @JvmOverloads constructor(
     private val liveListListener = object : LiveListListener() {
         override fun onLiveEnded(liveID: String, reason: LiveEndedReason, message: String) {
             if (liveID == liveInfo.liveID) {
-                endLive(false)
+                endLive(reason, false)
             }
         }
 
@@ -1440,7 +1440,7 @@ class AnchorView @JvmOverloads constructor(
         }
     }
 
-    private fun endLive(isFinish: Boolean = true) {
+    private fun endLive(reason: LiveEndedReason = LiveEndedReason.ENDED_BY_HOST, isFinish: Boolean = true) {
         PIPPanelStore.sharedInstance().state.isAnchorStreaming = false
         liveCoreView.setLocalVideoMuteImage(null, null)
         LiveListStore.shared().endLive(null)
@@ -1448,6 +1448,7 @@ class AnchorView @JvmOverloads constructor(
             TUIConstants.Privacy.EVENT_ROOM_STATE_CHANGED, TUIConstants.Privacy.EVENT_SUB_KEY_ROOM_STATE_STOP, null
         )
         TUICore.notifyEvent(EVENT_KEY_TIME_LIMIT, EVENT_SUB_KEY_COUNTDOWN_END, null)
+        anchorStore?.notifyRoomExit(reason)
         if (isFinish) {
             finishActivity()
         }

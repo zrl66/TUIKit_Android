@@ -11,7 +11,6 @@ import com.trtc.uikit.livekit.features.anchorboardcast.store.BattleUser
 import com.trtc.uikit.livekit.features.anchorboardcast.view.BasicView
 import io.trtc.tuikit.atomicxcore.api.live.CoHostStore
 import io.trtc.tuikit.atomicxcore.api.live.LiveListStore
-import io.trtc.tuikit.atomicxcore.api.login.LoginStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,6 +27,7 @@ class BattleInfoView @JvmOverloads constructor(
     }
 
     private val logger = LiveKitLogger.getFeaturesLogger("BattleInfoView")
+    private val isRtl: Boolean = context.resources.configuration.layoutDirection == LAYOUT_DIRECTION_RTL
     private lateinit var singleBattleScoreView: SingleBattleScoreView
     private lateinit var battleTimeView: TextView
     private lateinit var battleStartView: ImageView
@@ -140,9 +140,14 @@ class BattleInfoView @JvmOverloads constructor(
         }
     }
 
-    @SuppressLint("DefaultLocale")
     private fun updateTime(time: Long) {
-        battleTimeView.text = String.format("%d:%02d", time / 60, time % 60)
+        val minutes = time / 60
+        val seconds = time % 60
+        battleTimeView.text = if (isRtl) {
+            String.format("%02d:%02d", seconds, minutes)
+        } else {
+            String.format("%02d:%02d", minutes, seconds)
+        }
     }
 
     private suspend fun onResultDisplay() {

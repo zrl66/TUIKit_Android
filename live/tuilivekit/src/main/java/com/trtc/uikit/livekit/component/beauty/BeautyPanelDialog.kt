@@ -12,13 +12,18 @@ class BeautyPanelDialog(
     private val context: Context
 ) : AtomicPopover(context) {
 
+    init {
+        setTransparentBackground(true)
+        setShowMask(false)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
         val beautyView: View = if (TEBeautyManager.isSupportTEBeauty()) {
             TEBeautyView(context)
         } else {
             BeautyListPanel(context)
         }
         setContent(beautyView)
-        super.onCreate(savedInstanceState)
     }
 }

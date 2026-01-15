@@ -15,7 +15,9 @@ import com.trtc.uikit.livekit.common.LiveKitLogger
 import com.trtc.uikit.livekit.common.PermissionRequest
 import com.trtc.uikit.livekit.common.completionHandler
 import com.trtc.uikit.livekit.features.audiencecontainer.store.AudienceStore
-import com.trtc.uikit.livekit.features.audiencecontainer.view.ConfirmDialog
+import io.trtc.tuikit.atomicx.widget.basicwidget.alertdialog.AtomicAlertDialog
+import io.trtc.tuikit.atomicx.widget.basicwidget.alertdialog.cancelButton
+import io.trtc.tuikit.atomicx.widget.basicwidget.alertdialog.confirmButton
 import io.trtc.tuikit.atomicx.widget.basicwidget.avatar.AtomicAvatar
 import io.trtc.tuikit.atomicx.widget.basicwidget.avatar.AtomicAvatar.AvatarContent
 import io.trtc.tuikit.atomicx.widget.basicwidget.popover.AtomicPopover
@@ -40,7 +42,7 @@ class AnchorManagerDialog(
 ) : AtomicPopover(context) {
 
     private var seatUserInfo: LiveUserInfo? = null
-    private var confirmDialog: ConfirmDialog? = null
+    private var confirmDialog: AtomicAlertDialog? = null
     private var subscribeStateJob: Job? = null
 
     private lateinit var imageHeadView: AtomicAvatar
@@ -247,33 +249,43 @@ class AnchorManagerDialog(
         }
 
         if (confirmDialog == null) {
-            confirmDialog = ConfirmDialog(context)
+            confirmDialog = AtomicAlertDialog(context)
         }
 
         if (isAdmin()) {
-            confirmDialog!!.setContent(context.getString(R.string.common_disconnect_tips))
-            confirmDialog!!.setPositiveText(context.getString(R.string.common_disconnection))
-            confirmDialog!!.setPositiveListener {
-                audienceStore.getLiveSeatStore().kickUserOutOfSeat(
-                    seatUserInfo!!.userID,
-                    completionHandler {
-                        onError { code, _ ->
-                            ErrorLocalized.onError(code)
-                        }
-                    })
-                dismiss()
+            confirmDialog?.init {
+                title = context.getString(R.string.common_disconnect_tips)
+                confirmButton(context.getString(R.string.common_disconnection), onClick = {
+                    audienceStore.getLiveSeatStore().kickUserOutOfSeat(
+                        seatUserInfo!!.userID,
+                        completionHandler {
+                            onError { code, _ ->
+                                ErrorLocalized.onError(code)
+                            }
+                        })
+                    dismiss()
+                }, type = AtomicAlertDialog.TextColorPreset.RED)
+                cancelButton(
+                    context.getString(R.string.common_cancel),
+                    type = AtomicAlertDialog.TextColorPreset.PRIMARY
+                )
             }
             confirmDialog!!.show()
             return
         }
 
         if (isSelfUser()) {
-            confirmDialog!!.setContent(context.getString(R.string.common_terminate_room_connection_message))
-            confirmDialog!!.setPositiveText(context.getString(R.string.common_disconnection))
-            confirmDialog!!.setPositiveListener {
-                audienceStore.getCoGuestStore().disconnect(null)
-                audienceStore.getViewStore().updateTakeSeatState(false)
-                dismiss()
+            confirmDialog?.init {
+                title = context.getString(R.string.common_terminate_room_connection_message)
+                confirmButton(context.getString(R.string.common_disconnection), onClick = {
+                    audienceStore.getCoGuestStore().disconnect(null)
+                    audienceStore.getViewStore().updateTakeSeatState(false)
+                    dismiss()
+                }, type = AtomicAlertDialog.TextColorPreset.RED)
+                cancelButton(
+                    context.getString(R.string.common_cancel),
+                    type = AtomicAlertDialog.TextColorPreset.PRIMARY
+                )
             }
             confirmDialog!!.show()
         }

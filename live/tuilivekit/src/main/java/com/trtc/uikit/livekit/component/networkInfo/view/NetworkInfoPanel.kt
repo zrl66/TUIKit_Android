@@ -29,6 +29,7 @@ class NetworkInfoPanel(
     private val state: NetworkInfoState = service.networkInfoState
     private val colorNormal: Int = ContextCompat.getColor(context, R.color.common_text_color_normal)
     private val colorAbnormal: Int = ContextCompat.getColor(context, R.color.common_text_color_abnormal)
+    private val isRtl: Boolean = context.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
 
     private lateinit var imageVideoStatus: ImageView
     private lateinit var imageAudioStatus: ImageView
@@ -310,26 +311,24 @@ class NetworkInfoPanel(
         }
     }
 
-    @SuppressLint("DefaultLocale")
+    @SuppressLint("SetTextI18n")
     private fun onRTTChange(rtt: Int?) {
         rtt?.let {
-            textRTT.text = String.format("%dms", it)
+            textRTT.text = "${it}ms"
             textRTT.setTextColor(if (it > 100) colorAbnormal else colorNormal)
         }
     }
 
-    @SuppressLint("DefaultLocale")
     private fun onUpLossChange(upLoss: Int?) {
         upLoss?.let {
-            textUpLoss.text = String.format("%d%%", it)
+            textUpLoss.text = if (isRtl) "$it%" else "%$it"
             textUpLoss.setTextColor(if (it > 10) colorAbnormal else colorNormal)
         }
     }
 
-    @SuppressLint("DefaultLocale")
     private fun onDownLossChange(downLoss: Int?) {
         downLoss?.let {
-            textDownLoss.text = String.format("%d%%", it)
+            textDownLoss.text = if (isRtl) "$it%" else "%$it"
             textDownLoss.setTextColor(if (it > 10) colorAbnormal else colorNormal)
         }
     }

@@ -8,6 +8,10 @@ import android.widget.TextView
 import com.trtc.uikit.livekit.R
 import com.trtc.uikit.livekit.common.ui.setDebounceClickListener
 import com.trtc.uikit.livekit.features.anchorboardcast.store.AnchorStore
+import io.trtc.tuikit.atomicx.widget.basicwidget.alertdialog.AtomicAlertDialog
+import io.trtc.tuikit.atomicx.widget.basicwidget.alertdialog.AtomicAlertDialog.TextColorPreset
+import io.trtc.tuikit.atomicx.widget.basicwidget.alertdialog.cancelButton
+import io.trtc.tuikit.atomicx.widget.basicwidget.alertdialog.confirmButton
 import io.trtc.tuikit.atomicx.widget.basicwidget.avatar.AtomicAvatar
 import io.trtc.tuikit.atomicx.widget.basicwidget.avatar.AtomicAvatar.AvatarContent
 import io.trtc.tuikit.atomicx.widget.basicwidget.popover.AtomicPopover
@@ -33,7 +37,7 @@ class UserManagerDialog(
     private lateinit var textUnfollow: TextView
     private lateinit var imageFollowIcon: ImageView
     private var isMessageDisabled = false
-    private var confirmDialog: ConfirmDialog? = null
+    private var confirmDialog: AtomicAlertDialog? = null
     private var subscribeStateJob: Job? = null
 
     private val liveAudienceListener = object : LiveAudienceListener() {
@@ -177,7 +181,7 @@ class UserManagerDialog(
 
     private fun onKickUserButtonClicked() {
         if (confirmDialog == null) {
-            confirmDialog = ConfirmDialog(context)
+            confirmDialog = AtomicAlertDialog(context)
         }
 
         val name = if (TextUtils.isEmpty(userInfo.userName)) {
@@ -186,14 +190,15 @@ class UserManagerDialog(
             userInfo.userName
         }
 
-        confirmDialog?.apply {
-            setContent(context.getString(R.string.common_kick_user_confirm_message, name))
-            setPositiveText(context.getString(R.string.common_kick_out_of_room))
-            setPositiveListener {
+        confirmDialog?.init {
+            title =
+                context.getString(R.string.common_kick_user_confirm_message, name)
+            confirmButton(context.getString(R.string.common_kick_out_of_room), onClick = {
                 anchorStore.getUserStore().kickRemoteUserOutOfRoom(userInfo.userID)
                 dismiss()
-            }
-            show()
+            }, type = TextColorPreset.RED)
+            cancelButton(context.getString(R.string.common_cancel), type = TextColorPreset.PRIMARY)
         }
+        confirmDialog?.show()
     }
 }

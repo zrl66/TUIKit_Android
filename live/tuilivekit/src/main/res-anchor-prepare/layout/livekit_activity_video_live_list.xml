@@ -28,7 +28,7 @@
             android:layout_height="24dp"
             android:layout_centerVertical="true"
             android:layout_marginStart="12dp"
-            android:src="@drawable/livekit_ic_back_white"
+            android:src="@drawable/livekit_return_arrow"
             tools:ignore="ContentDescription" />
 
         <io.trtc.tuikit.atomicx.widget.basicwidget.label.AtomicLabel

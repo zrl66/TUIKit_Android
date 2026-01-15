@@ -16,12 +16,15 @@ import com.trtc.uikit.livekit.R
 import com.trtc.uikit.livekit.common.ErrorLocalized
 import com.trtc.uikit.livekit.common.LiveKitLogger
 import com.trtc.uikit.livekit.common.PermissionRequest
+import com.trtc.uikit.livekit.common.completionHandler
 import com.trtc.uikit.livekit.features.anchorboardcast.store.AnchorStore
 import com.trtc.uikit.livekit.features.anchorboardcast.store.MediaStore
-import com.trtc.uikit.livekit.features.anchorboardcast.view.usermanage.ConfirmDialog
+import io.trtc.tuikit.atomicx.widget.basicwidget.alertdialog.AtomicAlertDialog
+import io.trtc.tuikit.atomicx.widget.basicwidget.alertdialog.cancelButton
+import io.trtc.tuikit.atomicx.widget.basicwidget.alertdialog.confirmButton
 import io.trtc.tuikit.atomicx.widget.basicwidget.avatar.AtomicAvatar
-import io.trtc.tuikit.atomicx.widget.basicwidget.popover.AtomicPopover
 import io.trtc.tuikit.atomicx.widget.basicwidget.avatar.AtomicAvatar.AvatarContent
+import io.trtc.tuikit.atomicx.widget.basicwidget.popover.AtomicPopover
 import io.trtc.tuikit.atomicxcore.api.CompletionHandler
 import io.trtc.tuikit.atomicxcore.api.device.DeviceStatus
 import io.trtc.tuikit.atomicxcore.api.device.DeviceStore
@@ -62,7 +65,7 @@ class AnchorManagerDialog(
     private lateinit var tvVideo: TextView
     private lateinit var textUnfollow: TextView
     private lateinit var imageFollowIcon: ImageView
-    private var confirmDialog: ConfirmDialog? = null
+    private var confirmDialog: AtomicAlertDialog? = null
     private var subscribeStateJob: Job? = null
 
     init {
@@ -215,40 +218,44 @@ class AnchorManagerDialog(
         val currentUserInfo = seatInfo ?: return
 
         if (confirmDialog == null) {
-            confirmDialog = ConfirmDialog(context)
+            confirmDialog = AtomicAlertDialog(context)
         }
 
         if (isAdmin()) {
-            confirmDialog?.apply {
-                setContent(context.getString(R.string.common_disconnect_tips))
-                setPositiveText(context.getString(R.string.common_disconnection))
-                setPositiveListener {
+            confirmDialog?.init {
+                title = context.getString(R.string.common_disconnect_tips)
+                confirmButton(context.getString(R.string.common_disconnection), onClick = {
                     LiveSeatStore.create(LiveListStore.shared().liveState.currentLive.value.liveID)
-                        .kickUserOutOfSeat(currentUserInfo.userInfo.userID, object : CompletionHandler {
-                            override fun onSuccess() {}
-
-                            override fun onFailure(code: Int, desc: String) {
-                                LOGGER.error("disconnectUser failed:code:$code,desc:$desc")
-                                ErrorLocalized.onError(code)
-                            }
-                        })
+                        .kickUserOutOfSeat(
+                            currentUserInfo.userInfo.userID,
+                            completionHandler {
+                                onError { code, desc ->
+                                    LOGGER.error("disconnectUser failed:code:$code,desc:$desc")
+                                    ErrorLocalized.onError(code)
+                                }
+                            })
                     dismiss()
-                }
-                show()
+                }, type = AtomicAlertDialog.TextColorPreset.RED)
+                cancelButton(
+                    context.getString(R.string.common_cancel),
+                    type = AtomicAlertDialog.TextColorPreset.PRIMARY
+                )
             }
+            confirmDialog?.show()
             return
         }
 
         if (isSelfUser()) {
-            confirmDialog?.apply {
-                setContent(context.getString(R.string.common_terminate_room_connection_message))
-                setPositiveText(context.getString(R.string.common_disconnection))
-                setPositiveListener {
-                    CoGuestStore.create(LiveListStore.shared().liveState.currentLive.value.liveID).disconnect(null)
+            confirmDialog?.init {
+                title = context.getString(R.string.common_terminate_room_connection_message)
+                confirmButton(context.getString(R.string.common_disconnection), onClick = {
+                    CoGuestStore.create(LiveListStore.shared().liveState.currentLive.value.liveID)
+                        .disconnect(null)
                     dismiss()
-                }
-                show()
+                },type = AtomicAlertDialog.TextColorPreset.RED)
+                cancelButton(context.getString(R.string.common_cancel),type = AtomicAlertDialog.TextColorPreset.PRIMARY)
             }
+            confirmDialog?.show()
         }
     }
 

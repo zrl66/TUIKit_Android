@@ -19,7 +19,7 @@ class GiftHeartLayout(context: Context?, attrs: AttributeSet?) : RelativeLayout(
     private var bitmapHeight = 0
     private var bitmapWidth = 0
     private var pointX = 0
-
+    private val isRtl = context?.resources?.configuration?.layoutDirection == LAYOUT_DIRECTION_RTL
     private fun findViewById(context: Context?) {
         LayoutInflater.from(context).inflate(R.layout.gift_layout_heart_layout, this)
         val bitmap = BitmapFactory.decodeResource(resources, R.drawable.gift_ic_like_png)
@@ -46,7 +46,7 @@ class GiftHeartLayout(context: Context?, attrs: AttributeSet?) : RelativeLayout(
             animator = GiftPathAnimator(
                 GiftAbstractPathAnimator.Config.fromTypeArray(
                     this, mInitX.toFloat(), textHeight.toFloat(),
-                    pointX, bitmapWidth, bitmapHeight
+                    pointX, bitmapWidth, bitmapHeight, isRtl
                 )
             )
         }

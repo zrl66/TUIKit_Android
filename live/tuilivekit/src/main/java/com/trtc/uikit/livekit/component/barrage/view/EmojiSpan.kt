@@ -5,7 +5,6 @@ import android.graphics.Paint
 import android.graphics.drawable.Drawable
 import android.text.style.ImageSpan
 import androidx.core.graphics.withSave
-import com.trtc.tuikit.common.util.ScreenUtil
 
 class EmojiSpan @JvmOverloads constructor(
     drawable: Drawable,
@@ -20,13 +19,14 @@ class EmojiSpan @JvmOverloads constructor(
         fm: Paint.FontMetricsInt?
     ) = drawable.bounds.right.also {
         fm?.run {
-            val fontHeight = paint.fontMetricsInt.run { bottom - top }
-            val drHeight = drawable.bounds.bottom + ScreenUtil.dip2px(6f)
-            val centerY = drHeight / 2 - fontHeight / 4
-            ascent = -centerY
-            top = -centerY
-            bottom = centerY
-            descent = centerY
+            val pfm = paint.fontMetricsInt
+            val drHeight = drawable.bounds.height()
+            val fontHeight = pfm.descent - pfm.ascent
+            val centerOffset = (drHeight - fontHeight) / 2
+            ascent = pfm.ascent - centerOffset
+            top = pfm.top - centerOffset
+            bottom = pfm.descent + centerOffset
+            descent = pfm.descent + centerOffset
         }
     }
 
@@ -41,11 +41,12 @@ class EmojiSpan @JvmOverloads constructor(
         bottom: Int,
         paint: Paint
     ) {
-        canvas.run {
-            withSave {
-                translate(x, ((bottom - top - drawable.bounds.bottom) / 2 + top - emojiTranslateY).toFloat())
-                drawable.draw(this)
-            }
+        canvas.withSave {
+            val pfm = paint.fontMetricsInt
+            val fontCenter = y + (pfm.descent + pfm.ascent) / 2
+            val translateY = fontCenter - drawable.bounds.height() / 2 - emojiTranslateY
+            translate(x, translateY.toFloat())
+            drawable.draw(this)
         }
     }
 }
