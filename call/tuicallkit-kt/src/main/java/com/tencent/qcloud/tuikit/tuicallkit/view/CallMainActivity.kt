@@ -70,6 +70,7 @@ class CallMainActivity : FullScreenActivity() {
             setAudioDeviceRoute(mediaType)
             openDeviceMediaForMediaType(mediaType)
         }
+        CallManager.instance.startForegroundService()
     }
 
     private fun initView() {
@@ -179,6 +180,7 @@ class CallMainActivity : FullScreenActivity() {
     override fun onDestroy() {
         super.onDestroy()
         subscribeStateJob?.cancel()
+        CallManager.instance.stopForegroundService()
         Logger.i(TAG, "onDestroy")
     }
 
