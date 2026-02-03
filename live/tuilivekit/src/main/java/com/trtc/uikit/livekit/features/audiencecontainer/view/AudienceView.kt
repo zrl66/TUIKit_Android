@@ -15,12 +15,13 @@ import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
+import com.tencent.cloud.tuikit.engine.common.ContextProvider
 import com.tencent.qcloud.tuicore.TUICore
 import com.tencent.qcloud.tuicore.TUIThemeManager
-import com.tencent.qcloud.tuicore.util.ScreenUtil.dip2px
 import com.trtc.tuikit.common.imageloader.ImageLoader
 import com.trtc.tuikit.common.imageloader.ImageOptions
-import com.trtc.tuikit.common.system.ContextProvider
+import com.trtc.tuikit.common.util.ScreenUtil
+import com.trtc.tuikit.common.util.ScreenUtil.dip2px
 import com.trtc.uikit.livekit.R
 import com.trtc.uikit.livekit.common.COMPONENT_LIVE_STREAM
 import com.trtc.uikit.livekit.common.EVENT_KEY_LIVE_KIT
@@ -162,7 +163,7 @@ class AudienceView @JvmOverloads constructor(
         layoutLiveCoreViewMask.addView(liveCoreViewMaskBackgroundView)
         createVideoMuteBitmap()
         setComponent(COMPONENT_LIVE_STREAM)
-        setLayoutBackground(liveInfo.coverURL)
+        setLayoutBackground(liveInfo.coverURL, liveInfo.seatLayoutTemplateID)
     }
 
     fun getRoomId(): String {
@@ -269,6 +270,8 @@ class AudienceView @JvmOverloads constructor(
         setVideoViewAdapter()
         liveListStore.joinLive(liveInfo.liveID, object : LiveInfoCompletionHandler {
             override fun onSuccess(liveInfo: LiveInfo) {
+                this@AudienceView.liveInfo = liveInfo
+                setCoreViewLayoutParamsWhenLandscape(liveInfo.seatLayoutTemplateID, true)
                 val activity = context as Activity
                 if (activity.isFinishing || activity.isDestroyed) {
                     LOGGER.warn("activity is exit, leaveLiveStream")
@@ -337,6 +340,8 @@ class AudienceView @JvmOverloads constructor(
         (context as Activity).requestedOrientation =
             if (isPortrait) ActivityInfo.SCREEN_ORIENTATION_PORTRAIT else ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         updateViewByOrientation(isPortrait)
+        liveCoreViewMaskBackgroundView.setPortrait(isPortrait)
+        setCoreViewLayoutParamsWhenLandscape(liveInfo.seatLayoutTemplateID, isPortrait)
     }
 
     private fun updateViewByOrientation(isPortrait: Boolean) {
@@ -392,33 +397,43 @@ class AudienceView @JvmOverloads constructor(
         val params = LayoutParams(
             LayoutParams.WRAP_CONTENT,
             LayoutParams.WRAP_CONTENT,
-            Gravity.BOTTOM or Gravity.END
+            Gravity.TOP or Gravity.END
         )
 
         if (isPortrait) {
             videoWidth = screenWidth
             videoHeight = videoWidth * 9 / 16
-            val videoTop = (screenHeight - videoHeight) / 2
+            val videoTop = videoHeight + dip2px(100f)
             params.rightMargin = dip2px(12f)
-            params.bottomMargin = videoTop + dip2px(24f)
+            params.topMargin = videoTop
         } else {
             videoHeight = screenWidth
             videoWidth = videoHeight * 16 / 9
             val videoRightMargin = (screenHeight - videoWidth) / 2
             val videoBottomMargin = videoHeight / 2
             params.rightMargin = videoRightMargin + dip2px(24f)
-            params.bottomMargin = videoBottomMargin
+            params.topMargin = videoBottomMargin
         }
         return params
     }
 
-    private fun setLayoutBackground(imageUrl: String?) {
-        val builder = ImageOptions.Builder()
-        builder.setBlurEffect(80f)
-        if (TextUtils.isEmpty(imageUrl)) {
-            ImageLoader.load(context, ivVideoViewBackground, DEFAULT_COVER_URL, builder.build())
+    private fun setLayoutBackground(imageUrl: String?, seatLayoutTemplateId: Int) {
+        LOGGER.info("setLayoutBackground->imageUrl: $imageUrl, seatLayoutTemplateId:$seatLayoutTemplateId")
+        if (seatLayoutTemplateId != 200) {
+            val builder = ImageOptions.Builder()
+            builder.setBlurEffect(80f)
+            if (TextUtils.isEmpty(imageUrl)) {
+                ImageLoader.load(context, ivVideoViewBackground, DEFAULT_COVER_URL, builder.build())
+            } else {
+                ImageLoader.load(context, ivVideoViewBackground, imageUrl, builder.build())
+            }
         } else {
-            ImageLoader.load(context, ivVideoViewBackground, imageUrl, builder.build())
+            ImageLoader.clear(context, ivVideoViewBackground)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                ivVideoViewBackground.setRenderEffect(null)
+            }
+            ivVideoViewBackground.setImageDrawable(null)
+            ivVideoViewBackground.setBackgroundColor(android.graphics.Color.BLACK)
         }
     }
 
@@ -662,6 +677,21 @@ class AudienceView @JvmOverloads constructor(
         linkMicDialog.show()
     }
 
+    private fun setCoreViewLayoutParamsWhenLandscape(templateId: Int, isPortrait: Boolean) {
+        LOGGER.info("setCoreViewLayoutParamsWhenLandscape:templateId:$templateId,isPortrait:$isPortrait")
+        val layoutParams: FrameLayout.LayoutParams = layoutLiveCoreView.layoutParams as FrameLayout.LayoutParams
+        if (templateId == 200 && isPortrait) {
+            layoutParams.topMargin = dip2px(150f)
+            layoutParams.height = ScreenUtil.getScreenWidth(context) * 720 / 1280
+
+        } else {
+            layoutParams.topMargin = 0
+            layoutParams.height = FrameLayout.LayoutParams.MATCH_PARENT
+        }
+        layoutLiveCoreView.layoutParams = layoutParams
+        setLayoutBackground(liveInfo.backgroundURL, templateId)
+    }
+
     fun subscribeObserver() {
         audienceStore.addAudienceViewListener(this)
         subscribeStateJob = CoroutineScope(Dispatchers.Main).launch {
@@ -863,41 +893,6 @@ class AudienceView @JvmOverloads constructor(
         endLiveDialog = atomicEndLiveDialog
         endLiveDialog?.show()
     }
-
-// 假设 endLiveDialog 变量的类型从 StandardDialog 变更为 Dialog?
-// private var endLiveDialog: Dialog? = null
-//
-//    private fun showLiveStreamEndDialog1() {
-//        endLiveDialog = StandardDialog(context)
-//        endLiveDialog?.setContent(resources.getString(R.string.common_audience_end_link_tips))
-//        val options: MutableList<StandardDialog.Option> = ArrayList()
-//        options.add(
-//            StandardDialog.Option(
-//                resources.getString(R.string.common_end_link),
-//                resources.getColor(R.color.common_not_standard_red)
-//            ) { _ ->
-//                coGuestStore.disconnect(null)
-//                audienceStore.getViewStore().updateTakeSeatState(false)
-//                endLiveDialog?.dismiss()
-//            }
-//        )
-//        options.add(
-//            StandardDialog.Option(
-//                resources.getString(R.string.common_exit_live),
-//                resources.getColor(R.color.common_color_white_e5)
-//            ) { _ ->
-//                TUICore.notifyEvent(EVENT_KEY_LIVE_KIT, EVENT_SUB_KEY_DESTROY_LIVE_VIEW, null)
-//                endLiveDialog?.dismiss()
-//            }
-//        )
-//        options.add(
-//            StandardDialog.Option(
-//                resources.getString(R.string.common_cancel),
-//                resources.getColor(R.color.common_color_white_e5)
-//            ) { _ -> endLiveDialog?.dismiss() })
-//        endLiveDialog?.setOptions(options)
-//        endLiveDialog?.show()
-//    }
 
     inner class VideoViewAdapterImpl(context: Context) : VideoViewAdapter {
 

@@ -50,6 +50,7 @@ class LiveCoreViewMaskBackgroundView @JvmOverloads constructor(
     private var middleRect = Rect()
     private var bottomRect = Rect()
     private var enableBlur = true
+    private var isPortrait = true
 
     private var subscribeStateJob: Job? = null
 
@@ -269,7 +270,16 @@ class LiveCoreViewMaskBackgroundView @JvmOverloads constructor(
         setBackgroundColor(color)
     }
 
+    fun setPortrait(isPortrait: Boolean) {
+        this.isPortrait = isPortrait
+        invalidate()
+    }
+
     fun isFullScreenLayoutBySeatLayout(): Boolean {
+        val videoLandscape4SeatsTemplateID = 200
+        if (audienceStore.getLiveSeatState().canvas.value.templateID == videoLandscape4SeatsTemplateID && isPortrait) {
+            return false
+        }
         if (audienceStore.getLiveSeatState().seatList.value.isEmpty()) {
             return true
         }
@@ -290,6 +300,16 @@ class LiveCoreViewMaskBackgroundView @JvmOverloads constructor(
             || audienceStore.getLiveSeatState().canvas.value.h == 0
             || seatList.isEmpty()
         ) {
+            invalidate()
+            return
+        }
+        if (audienceStore.getLiveSeatState().canvas.value.templateID == 200 && isPortrait) {
+            val screenWidth = ScreenUtil.getScreenWidth(context)
+            val videoTop = ScreenUtil.dip2px(150f)
+            val videoBottom = screenWidth * 9 / 16 + ScreenUtil.dip2px(150f)
+            topRect = Rect(0, 0, parentWidth, videoTop)
+            middleRect = Rect(0, videoTop, parentWidth, videoBottom)
+            bottomRect = Rect(0, videoBottom, parentWidth, parentHeight)
             invalidate()
             return
         }
