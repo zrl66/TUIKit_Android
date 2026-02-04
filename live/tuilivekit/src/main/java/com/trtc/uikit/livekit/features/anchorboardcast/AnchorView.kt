@@ -466,7 +466,7 @@ class AnchorView @JvmOverloads constructor(
         } else {
             LiveCoreView(context, null, 0, CoreViewType.PUSH_VIEW)
         }
-        liveCoreView.setLiveId(liveInfo.liveID)
+        liveCoreView.setLiveID(liveInfo.liveID)
         layoutCoreViewContainer.addView(liveCoreView)
     }
 

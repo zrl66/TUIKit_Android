@@ -64,7 +64,7 @@ class AnchorPrepareView @JvmOverloads constructor(
         logger.info("AnchorPrepareView init. roomId:$roomId,liveCoreView:$liveCoreView")
         this.liveCoreView = liveCoreView
             ?: LiveCoreView(context, null, 0, CoreViewType.PUSH_VIEW).apply {
-                setLiveId(roomId)
+                setLiveID(roomId)
             }
         initPrepareStore(roomId)
         initComponent()

@@ -24,6 +24,7 @@ import com.tencent.qcloud.tuicore.TUILogin
 import com.tencent.qcloud.tuikit.tuicallkit.TUICallKit.Companion.createInstance
 import io.trtc.tuikit.atomicx.widget.basicwidget.toast.AtomicToast
 import com.tencent.qcloud.tuikit.tuicallkit.common.data.Constants
+import com.tencent.qcloud.tuikit.tuicallkit.state.GlobalState
 import com.tencent.qcloud.tuikit.tuicallkit.state.GlobalState.Companion.instance
 import com.tencent.qcloud.tuikit.tuicallkit.view.CallAdapter
 import com.tencent.uikit.app.R
@@ -43,6 +44,7 @@ class SettingsActivity : BaseActivity() {
     private var switchFloating: SwitchCompat? = null
     private var switchBlurBackground: SwitchCompat? = null
     private var switchIncomingBanner: SwitchCompat? = null
+    private var switchAISubtitle: SwitchCompat? = null
     private var editDigitalRoomId: EditText? = null
     private var editStringRoomId: EditText? = null
     private var editTimeout: EditText? = null
@@ -80,6 +82,7 @@ class SettingsActivity : BaseActivity() {
         switchFloating = findViewById(R.id.switch_floating)
         switchBlurBackground = findViewById(R.id.switch_blur_background)
         switchIncomingBanner = findViewById(R.id.switch_incoming_banner)
+        switchAISubtitle = findViewById(R.id.app_switch_ai_subtitle)
 
         editDigitalRoomId = findViewById(R.id.et_room_id_num)
         editStringRoomId = findViewById(R.id.et_room_id_str)
@@ -140,6 +143,9 @@ class SettingsActivity : BaseActivity() {
         switchIncomingBanner?.setOnCheckedChangeListener { buttonView: CompoundButton?, isChecked: Boolean ->
             SettingsConfig.isIncomingBanner = isChecked
             createInstance(application).enableIncomingBanner(isChecked)
+        }
+        switchAISubtitle?.setOnCheckedChangeListener{ buttonView: CompoundButton?, isChecked: Boolean ->
+            createInstance(application).enableAITranscriber(isChecked)
         }
 
         editDigitalRoomId?.setOnEditorActionListener { v: TextView?, actionId: Int, event: KeyEvent? ->
@@ -288,6 +294,7 @@ class SettingsActivity : BaseActivity() {
         switchFloating?.setChecked(SettingsConfig.isShowFloatingWindow)
         switchBlurBackground?.setChecked(SettingsConfig.isShowBlurBackground)
         switchIncomingBanner?.setChecked(SettingsConfig.isIncomingBanner)
+        switchAISubtitle?.setChecked(GlobalState.instance.enableAITranscriber)
 
         editDigitalRoomId?.setText("${SettingsConfig.intRoomId}")
         editStringRoomId?.setText(SettingsConfig.strRoomId)

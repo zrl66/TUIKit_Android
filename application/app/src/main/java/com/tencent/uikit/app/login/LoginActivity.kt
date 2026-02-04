@@ -101,6 +101,7 @@ class LoginActivity : BaseActivity() {
                 instance.enableFloatWindow(true)
                 instance.enableVirtualBackground(true)
                 instance.enableIncomingBanner(true)
+                instance.enableAITranscriber(true)
                 getUserInfo()
             }
 
