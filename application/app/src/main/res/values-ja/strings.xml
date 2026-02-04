@@ -70,6 +70,7 @@
     <string name="app_show_float_button">フローティング表示</string>
     <string name="app_blur_background">ぼかし背景を表示</string>
     <string name="app_incoming_banner">着信バナーを表示</string>
+    <string name="app_ai_subtitles">AI字幕を表示</string>
     <string name="app_call_params_setting">通話パラメータ</string>
     <string name="app_int_room_id">数字ルーム</string>
     <string name="app_string_room_id">文字列ルーム</string>

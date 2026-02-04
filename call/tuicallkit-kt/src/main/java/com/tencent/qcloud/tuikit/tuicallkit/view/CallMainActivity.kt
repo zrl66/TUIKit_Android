@@ -33,6 +33,7 @@ import com.trtc.tuikit.common.ui.floatwindow.FloatWindowManager
 import io.trtc.tuikit.atomicx.callview.CallView
 import kotlinx.coroutines.launch
 import com.trtc.tuikit.common.util.ToastUtil
+import io.trtc.tuikit.atomicx.callview.Feature
 import io.trtc.tuikit.atomicxcore.api.call.CallMediaType
 import io.trtc.tuikit.atomicxcore.api.call.CallStore
 import io.trtc.tuikit.atomicxcore.api.call.CallParticipantStatus
@@ -116,6 +117,9 @@ class CallMainActivity : FullScreenActivity() {
             callView?.setLayoutTemplate(CallLayoutTemplate.Float)
         } else {
             callView?.setLayoutTemplate(CallLayoutTemplate.Grid)
+        }
+        if (!GlobalState.instance.enableAITranscriber) {
+            callView?.disableFeatures(listOf(Feature.AI_TRANSCRIBER))
         }
         val view = GlobalState.instance.callAdapter?.onCreateMainView(callView!!) ?: callView
         callViewContainer?.addView(view)

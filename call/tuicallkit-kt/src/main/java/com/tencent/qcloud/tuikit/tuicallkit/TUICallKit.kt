@@ -68,6 +68,8 @@ abstract class TUICallKit {
      */
     open fun enableVirtualBackground(enable: Boolean) {}
 
+    open fun enableAITranscriber(enable: Boolean) {}
+
     /**
      * Enable callee show banner view when received an new invitation
      * default: false

@@ -45,10 +45,14 @@ class TUICallKitImpl private constructor(context: Context) : TUICallKit() {
     private val context = context.applicationContext ?: context
     private var subscribeSelfStateJob: Job? = null
     private val callStatusObserver = object : CallListener() {
+        override fun onCallStarted(callId: String, mediaType: CallMediaType) {
+            if (selfIsCaller() && GlobalState.instance.enableAITranscriber) {
+                CallManager.instance.startRealtimeTranscriber()
+            }
+        }
         override fun onCallEnded(callId: String, mediaType: CallMediaType, reason: CallEndReason, userId: String) {
-            var toastText: String? = null
-
             val activeCall = CallStore.shared.observerState.activeCall.value
+            var toastText: String? = null
             val selfInfo = CallStore.shared.observerState.selfInfo.value
             if (activeCall.inviteeIds.size > 1 || activeCall.chatGroupId.isNotEmpty() || selfInfo.id == userId) {
                 return
@@ -153,6 +157,10 @@ class TUICallKitImpl private constructor(context: Context) : TUICallKit() {
 
     override fun enableVirtualBackground(enable: Boolean) {
         CallManager.instance.enableVirtualBackground(enable)
+    }
+
+    override fun enableAITranscriber(enable: Boolean) {
+        CallManager.instance.enableAITranscriber(enable)
     }
 
     override fun enableIncomingBanner(enable: Boolean) {

@@ -15,15 +15,21 @@ import com.tencent.qcloud.tuikit.tuicallkit.common.data.Logger
 import com.tencent.qcloud.tuikit.tuicallkit.manager.feature.CallingBellFeature
 import com.tencent.qcloud.tuikit.tuicallkit.state.GlobalState
 import com.tencent.qcloud.tuikit.tuicallkit.state.ViewState
+import com.tencent.trtc.TRTCCloud
 import com.trtc.tuikit.common.foregroundservice.AudioForegroundService
 import com.trtc.tuikit.common.foregroundservice.VideoForegroundService
 import io.trtc.tuikit.atomicxcore.api.CompletionHandler
+import io.trtc.tuikit.atomicxcore.api.ai.AITranscriberStore
+import io.trtc.tuikit.atomicxcore.api.ai.SourceLanguage
+import io.trtc.tuikit.atomicxcore.api.ai.TranscriberConfig
+import io.trtc.tuikit.atomicxcore.api.ai.TranslationLanguage
 import io.trtc.tuikit.atomicxcore.api.call.CallMediaType
 import io.trtc.tuikit.atomicxcore.api.call.CallParams
 import io.trtc.tuikit.atomicxcore.api.call.CallStore
 import io.trtc.tuikit.atomicxcore.api.device.AudioRoute
 import io.trtc.tuikit.atomicxcore.api.device.DeviceStore
 import io.trtc.tuikit.atomicxcore.api.login.LoginStore
+import org.json.JSONArray
 import org.json.JSONObject
 
 class CallManager private constructor(context: Context) {
@@ -198,6 +204,11 @@ class CallManager private constructor(context: Context) {
         reportOnlineLog(data)
     }
 
+    fun enableAITranscriber(enable: Boolean) {
+        Logger.i(TAG, "enableAITranscriber, enable: $enable")
+        GlobalState.instance.enableAITranscriber = enable
+    }
+
     fun enableIncomingBanner(enable: Boolean) {
         Logger.i(TAG, "enableIncomingBanner, enable: $enable")
         GlobalState.instance.enableIncomingBanner = enable
@@ -263,6 +274,48 @@ class CallManager private constructor(context: Context) {
         } catch (e: Exception) {
             Logger.e(TAG, "callExperimentalAPI json parse fail，json: $jsonStr, error: $e")
         }
+    }
+
+    fun startRealtimeTranscriber() {
+        val transcriberConfig = TranscriberConfig(
+            sourceLanguage = SourceLanguage.CHINESE_ENGLISH,
+            translationLanguages = mutableListOf(TranslationLanguage.ENGLISH)
+        )
+        AITranscriberStore.shared.startRealtimeTranscriber(transcriberConfig, null)
+        closeVAD()
+    }
+
+    fun stopRealtimeTranscriber() {
+        AITranscriberStore.shared.stopRealtimeTranscriber(null)
+    }
+
+    private fun closeVAD() {
+        val resetObj = JSONObject().apply {
+            put("api", "setPrivateConfig")
+            put("params", JSONObject().apply {
+                put("configs", JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("key", "Liteav.Audio.common.enable.send.eos.packet.in.dtx")
+                        put("action", "reset")
+                    })
+                })
+            })
+        }
+        TRTCCloud.sharedInstance(context).callExperimentalAPI(resetObj.toString())
+
+        val closeObj = JSONObject().apply {
+            put("api", "setPrivateConfig")
+            put("params", JSONObject().apply {
+                put("configs", JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("key", "Liteav.Audio.common.enable.send.eos.packet.in.dtx")
+                        put("value", 0)
+                        put("default", 0)
+                    })
+                })
+            })
+        }
+        TRTCCloud.sharedInstance(context).callExperimentalAPI(closeObj.toString())
     }
 
     private fun convertErrorMsg(errorCode: Int, errMsg: String): String {

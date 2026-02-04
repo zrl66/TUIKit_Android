@@ -147,7 +147,7 @@ class AudienceView @JvmOverloads constructor(
         LOGGER.info("AudienceView init:$this")
         this.liveInfo = liveInfo
         liveCoreView = LiveCoreView(context)
-        liveCoreView.setLiveId(liveInfo.liveID)
+        liveCoreView.setLiveID(liveInfo.liveID)
     }
 
     fun initStore() {

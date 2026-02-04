@@ -24,12 +24,17 @@ import io.trtc.tuikit.atomicx.callview.public.controls.MultiCallControlsView
 import io.trtc.tuikit.atomicx.callview.public.controls.SingleCallControlsView
 import io.trtc.tuikit.atomicx.callview.public.hint.HintView
 import io.trtc.tuikit.atomicx.callview.public.hint.TimerView
+import io.trtc.tuikit.atomicx.callview.public.transcriber.CallTranscriberView
 import io.trtc.tuikit.atomicxcore.api.call.CallParticipantStatus
 import io.trtc.tuikit.atomicxcore.api.device.NetworkQuality
 import io.trtc.tuikit.atomicxcore.api.view.VolumeLevel
 import kotlinx.coroutines.supervisorScope
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
+
+enum class Feature(val value: String) {
+    AI_TRANSCRIBER("aiTranscriber"),
+}
 
 class CallView @JvmOverloads constructor(
     context: Context,
@@ -51,14 +56,21 @@ class CallView @JvmOverloads constructor(
     private var layoutCallHint: FrameLayout? = null
     private var multiCallWaitingViewContainer: LinearLayout? = null
 
+    private var disableFeatures: List<Feature>? = null
+
     init {
         initView()
         setIconResourcePath()
     }
 
+    fun disableFeatures(features: List<Feature>?) {
+        disableFeatures = features
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         addFunctionLayout()
+        addTranscriberLayout()
         updateWaitingView()
         subscribeStateJob = CoroutineScope(Dispatchers.Main).launch {
             supervisorScope {
@@ -131,6 +143,14 @@ class CallView @JvmOverloads constructor(
         )
         callMainView?.setNetworkQualityIcons(networkQualityIcons)
         callMainView?.setWaitingAnimation(imageResourceCache.getDrawablePath(R.drawable.callview_ic_loading))
+    }
+
+    private fun addTranscriberLayout() {
+        if (disableFeatures?.contains(Feature.AI_TRANSCRIBER) == true) {
+            return
+        }
+        val transcriberContainer = findViewById<FrameLayout>(R.id.call_layout_transcriber_container)
+        transcriberContainer.addView(CallTranscriberView(context))
     }
 
     private fun addFunctionLayout() {

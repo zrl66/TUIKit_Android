@@ -74,6 +74,7 @@
     <string name="app_show_float_button">显示悬浮按钮</string>
     <string name="app_blur_background">显示模糊背景</string>
     <string name="app_incoming_banner">显示来电横幅</string>
+    <string name="app_ai_subtitles">显示 AI 字幕</string>
     <string name="app_call_params_setting">通话参数</string>
     <string name="app_int_room_id">数字房间</string>
     <string name="app_string_room_id">字符串房间</string>
