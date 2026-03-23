@@ -1,10 +1,13 @@
 package com.tencent.qcloud.tuikit.tuicallkit.manager
 
 import android.content.Context
+import android.util.Log
 import com.tencent.cloud.tuikit.engine.call.TUICallDefine
 import com.tencent.cloud.tuikit.engine.call.TUICallEngine
 import com.tencent.cloud.tuikit.engine.common.TUICommonDefine
 import com.tencent.imsdk.BaseConstants
+import com.tencent.imsdk.v2.V2TIMManager
+import com.tencent.imsdk.v2.V2TIMValueCallback
 import com.tencent.qcloud.tuicore.TUIConfig
 import com.tencent.qcloud.tuicore.util.ErrorMessageConverter
 import com.tencent.qcloud.tuicore.util.SPUtils
@@ -280,7 +283,14 @@ class CallManager private constructor(context: Context) {
             sourceLanguage = SourceLanguage.CHINESE_ENGLISH,
             translationLanguages = mutableListOf(TranslationLanguage.ENGLISH)
         )
-        AITranscriberStore.shared.startRealtimeTranscriber(transcriberConfig, null)
+        AITranscriberStore.shared.startRealtimeTranscriber(transcriberConfig, object : CompletionHandler {
+            override fun onSuccess() {
+                observerTranscriber()
+            }
+
+            override fun onFailure(code: Int, desc: String) {
+            }
+        })
         closeVAD()
     }
 
@@ -315,6 +325,20 @@ class CallManager private constructor(context: Context) {
             })
         }
         TRTCCloud.sharedInstance(context).callExperimentalAPI(closeObj.toString())
+    }
+
+    private fun observerTranscriber() {
+        val param = JSONObject().apply {
+            put("UIComponentType", 1402)
+        }.toString()
+        V2TIMManager.getInstance()
+            .callExperimentalAPI("reportTUIFeatureUsage", param, object : V2TIMValueCallback<Any> {
+                override fun onSuccess(t: Any?) {
+                }
+                override fun onError(code: Int, desc: String?) {
+                    Log.e(TAG, "reportFeatureUsage failed: $code $desc")
+                }
+            })
     }
 
     private fun convertErrorMsg(errorCode: Int, errMsg: String): String {

@@ -53,4 +53,5 @@
     <string name="callkit_toast_other_party_busy">The other party is busy</string>
     <string name="callkit_toast_other_party_cancelled">The other party has cancelled the call</string>
 
+    <string name="callview_ai_transcriber_empty_hint">AI Real-time Subtitles</string>
 </resources>

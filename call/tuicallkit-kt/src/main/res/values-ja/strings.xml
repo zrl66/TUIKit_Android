@@ -48,4 +48,6 @@
     <string name="callkit_toast_other_party_no_response">相手が応答しませんでした</string>
     <string name="callkit_toast_other_party_busy">相手は通話中です</string>
     <string name="callkit_toast_other_party_cancelled">相手が通話をキャンセルしました</string>
+
+    <string name="callview_ai_transcriber_empty_hint">AI リアルタイム字幕</string>
 </resources>

@@ -50,4 +50,6 @@
     <string name="callkit_toast_other_party_no_response">الطرف الآخر لم يرد</string>
     <string name="callkit_toast_other_party_busy">الطرف الآخر مشغول</string>
     <string name="callkit_toast_other_party_cancelled">الطرف الآخر ألغى المكالمة</string>
+
+    <string name="callview_ai_transcriber_empty_hint">ترجمة فورية بالذكاء الاصطناعي</string>
 </resources>

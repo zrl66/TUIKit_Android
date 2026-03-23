@@ -3,10 +3,12 @@ package io.trtc.tuikit.atomicx.callview.public.transcriber
 import android.content.Context
 import android.view.LayoutInflater
 import android.widget.FrameLayout
+import android.widget.TextView
 import androidx.constraintlayout.utils.widget.ImageFilterButton
 import androidx.core.view.isVisible
 import io.trtc.tuikit.atomicx.R
 import io.trtc.tuikit.atomicx.ai.TranscriberView
+import io.trtc.tuikit.atomicxcore.api.ai.AITranscriberStore
 import io.trtc.tuikit.atomicxcore.api.ai.SourceLanguage
 import io.trtc.tuikit.atomicxcore.api.ai.TranslationLanguage
 import io.trtc.tuikit.atomicxcore.api.call.CallParticipantStatus
@@ -22,6 +24,7 @@ class CallTranscriberView(context: Context): FrameLayout(context) {
     private var subscribeStateJob: Job? = null
     private var btnShowTranscriber: ImageFilterButton? = null
     private var transcriberView: TranscriberView? = null
+    private var emptyHintView: TextView? = null
 
     init {
         initView()
@@ -32,6 +35,7 @@ class CallTranscriberView(context: Context): FrameLayout(context) {
         subscribeStateJob = CoroutineScope(Dispatchers.Main).launch {
             supervisorScope {
                 launch { observeSelfInfo() }
+                launch { observeRealtimeMessages() }
             }
         }
     }
@@ -45,6 +49,8 @@ class CallTranscriberView(context: Context): FrameLayout(context) {
         LayoutInflater.from(context).inflate(R.layout.callview_ai_transcriber, this)
         btnShowTranscriber = findViewById(R.id.call_btn_ai_transcriber)
         transcriberView = findViewById(R.id.call_view_ai_transcriber)
+        emptyHintView = findViewById(R.id.call_tv_ai_transcriber_empty_hint)
+
 
         btnShowTranscriber?.setOnClickListener {
             val isVisible = transcriberView?.isVisible == false
@@ -53,6 +59,7 @@ class CallTranscriberView(context: Context): FrameLayout(context) {
                 else R.drawable.callview_ic_ai_transcriber_off
             )
             transcriberView?.isVisible = isVisible
+            updateHintViewVisible()
         }
     }
 
@@ -66,6 +73,19 @@ class CallTranscriberView(context: Context): FrameLayout(context) {
                 TranscriberView.currentTranslationLanguage = TranslationLanguage.ENGLISH
                 TranscriberView.isBilingualEnabled = true
             }
+            updateHintViewVisible()
         }
+    }
+
+    private suspend fun observeRealtimeMessages() {
+        AITranscriberStore.shared.transcriberState.realtimeMessageList.collect { messages ->
+            updateHintViewVisible()
+        }
+    }
+
+    private fun updateHintViewVisible() {
+        val isEmpty = AITranscriberStore.shared.transcriberState.realtimeMessageList.value.isEmpty()
+        val isShow = transcriberView?.isVisible == true
+        emptyHintView?.isVisible = isShow && isEmpty
     }
 }

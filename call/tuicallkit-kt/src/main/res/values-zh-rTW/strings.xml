@@ -51,4 +51,6 @@
     <string name="callkit_toast_other_party_no_response">對方無應答</string>
     <string name="callkit_toast_other_party_busy">對方忙線中</string>
     <string name="callkit_toast_other_party_cancelled">對方已取消通話</string>
+
+    <string name="callview_ai_transcriber_empty_hint">AI 實時字幕</string>
 </resources>
